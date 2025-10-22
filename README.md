@@ -9,7 +9,7 @@ A collection of various useful ComfyUI custom nodes
 2. ta_load_checkpoint_model_with_name 
 3. ta_load_gguf_model_with_name  
 
-These are model loaders with an additional output that displays the model name.  
+These are model loaders with an additional output that displays the model name so that it can be used in the further workflow.  
 
 ___
 
