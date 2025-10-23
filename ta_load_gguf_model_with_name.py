@@ -9,22 +9,22 @@ from contextlib import redirect_stderr, redirect_stdout
 
 class TALoadGGUFModelWithName:
     """
-    Lädt ein GGUF-Modell und gibt zusätzlich den Modellnamen aus
-    Stille Version ohne Debug-Ausgaben
+    Loads a GGUF model and additionally outputs the model name
+    Silent version without debug output
     """
     
     @classmethod
     def INPUT_TYPES(cls):
-        # Suche GGUF-Dateien in verschiedenen Verzeichnissen
+        # Search for GGUF files in various directories
         unet_names = []
         
-        # Primär: unet_gguf Verzeichnis
+        # Primary: unet_gguf directory
         try:
             unet_names = folder_paths.get_filename_list("unet_gguf")
         except:
             pass
         
-        # Fallback: unet Verzeichnis mit .gguf Filter
+        # Fallback: unet directory with .gguf filter
         if not unet_names:
             try:
                 all_files = folder_paths.get_filename_list("unet")
@@ -32,7 +32,7 @@ class TALoadGGUFModelWithName:
             except:
                 pass
         
-        # Zweiter Fallback: diffusion_models mit .gguf Filter  
+        # Second fallback: diffusion_models with .gguf filter
         if not unet_names:
             try:
                 all_files = folder_paths.get_filename_list("diffusion_models")
@@ -53,7 +53,7 @@ class TALoadGGUFModelWithName:
     TITLE = "TA Load GGUF Model (with Name)"
     
     def load_unet(self, unet_name):
-        # Versuche die Datei in verschiedenen Verzeichnissen zu finden
+        # Try to find the file in various directories
         unet_path = None
         for folder_type in ["unet_gguf", "unet", "diffusion_models"]:
             try:
@@ -70,12 +70,12 @@ class TALoadGGUFModelWithName:
         gguf_node_path = os.path.join(folder_paths.base_path, "custom_nodes", "ComfyUI-GGUF")
         model = None
         
-        # Methode 1: Direkt die GGUF nodes.py importieren (ohne Ausgaben)
+        # Method 1: Directly import the GGUF nodes.py (without output)
         try:
             if gguf_node_path not in sys.path:
                 sys.path.insert(0, gguf_node_path)
             
-            # Unterdrücke alle Ausgaben während des Imports
+            # Suppress all output during import
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 try:
                     from nodes import UnetLoaderGGUF
@@ -83,7 +83,7 @@ class TALoadGGUFModelWithName:
                     result = loader.load_unet(unet_name)
                     model = result[0]
                 except ImportError:
-                    # Alternative Import-Methode
+                    # Alternative import method
                     import importlib.util
                     nodes_path = os.path.join(gguf_node_path, "nodes.py")
                     if os.path.exists(nodes_path):
@@ -98,7 +98,7 @@ class TALoadGGUFModelWithName:
         except:
             pass
         
-        # Methode 2: Verwende die registrierte Node (ohne Ausgaben)
+        # Method 2: Use the registered node (without output)
         if model is None:
             try:
                 with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
@@ -112,7 +112,7 @@ class TALoadGGUFModelWithName:
             except:
                 pass
         
-        # Methode 3: Versuche die GGUF-spezifischen Module zu importieren (ohne Ausgaben)
+        # Method 3: Try to import GGUF-specific modules (without output)
         if model is None:
             try:
                 with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
@@ -131,7 +131,7 @@ class TALoadGGUFModelWithName:
             except:
                 pass
         
-        # Wenn alles fehlschlägt
+        # If everything fails
         if model is None:
             error_msg = (
                 f"Could not load GGUF model: {unet_name}\n\n"
@@ -142,7 +142,7 @@ class TALoadGGUFModelWithName:
             )
             raise RuntimeError(error_msg)
         
-        # Extrahiere nur den Dateinamen ohne Pfad und Erweiterung
+        # Extract only the filename without path and extension
         model_name_only = os.path.splitext(os.path.basename(unet_name))[0]
         
         return (model, model_name_only)

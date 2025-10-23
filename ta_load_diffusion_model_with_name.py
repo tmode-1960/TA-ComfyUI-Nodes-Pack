@@ -5,8 +5,8 @@ import torch
 
 class TALoadDiffusionModelWithName:
     """
-    Lädt ein Diffusion-Modell (UNet) und gibt zusätzlich den Modellnamen aus
-    Kompatibel mit PyTorch 2.8+
+    Loads a diffusion model (UNet) and additionally outputs the model name
+    Compatible with PyTorch 2.8+
     """
     
     @classmethod
@@ -24,28 +24,28 @@ class TALoadDiffusionModelWithName:
     CATEGORY = "TA Nodes/loaders"
     
     def load_unet(self, unet_name, weight_dtype):
-        # Lade das Diffusion Model (UNet)
+        # Load the diffusion model (UNet)
         unet_path = folder_paths.get_full_path("diffusion_models", unet_name)
         
-        # Bestimme die model_options basierend auf weight_dtype
+        # Determine model_options based on weight_dtype
         model_options = {}
         if weight_dtype == "fp8_e4m3fn":
             model_options["weight_dtype"] = torch.float8_e4m3fn
         elif weight_dtype == "fp8_e5m2":
             model_options["weight_dtype"] = torch.float8_e5m2
-        # "default" bedeutet keine speziellen Optionen
+        # "default" means no special options
         
-        # PyTorch 2.8+ kompatibles Laden mit Kontext-Manager
+        # PyTorch 2.8+ compatible loading with context manager
         with torch.inference_mode():
             if model_options:
                 model = comfy.sd.load_diffusion_model(unet_path, model_options=model_options)
             else:
                 model = comfy.sd.load_diffusion_model(unet_path)
         
-        # Extrahiere nur den Dateinamen ohne Pfad und Erweiterung
+        # Extract only the filename without path and extension
         model_name_only = os.path.splitext(os.path.basename(unet_name))[0]
         
-        # Gebe Model und bereinigten Namen zurück
+        # Return model and cleaned name
         return (model, model_name_only)
 
 
