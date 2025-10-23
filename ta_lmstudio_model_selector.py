@@ -57,6 +57,7 @@ class TALMStudioModelSelector:
                         models.append(model_name)
                 
                 if models:
+                    models.sort(key=str.lower)  # Case-insensitive alphabetisch sortieren
                     print(f"[TA-ModelSelector] Found {len(models)} models")
                     return models
                 else:
@@ -78,13 +79,15 @@ class TALMStudioModelSelector:
         """
         Fallback: Standard vision models
         """
-        return [
+        models = [
             "llava-v1.5",
             "qwen2-vl-7b-instruct",
             "pixtral-12b",
             "minicpm-v-2.6",
             "gemma-3-27b-it",
         ]
+        models.sort(key=str.lower)  # Case-insensitive alphabetisch sortieren
+        return models
 
     @classmethod
     def IS_CHANGED(cls, model, refresh=False):
@@ -152,6 +155,7 @@ class TALMStudioLoadedModels:
                         models.append(model_name)
                 
                 if models:
+                    models.sort(key=str.lower)  # Case-insensitive alphabetisch sortieren
                     print(f"[TA-LoadedModels] Currently loaded: {', '.join(models)}")
                     return models
                 else:
