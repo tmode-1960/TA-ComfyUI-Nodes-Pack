@@ -5,6 +5,7 @@ Plus LM Studio Vision Integration for Image-to-Prompt
 Plus LM Studio Load On Run for controlled model loading
 """
 
+# Import base loader nodes
 from .ta_load_checkpoint_model_with_name import TALoadCheckpointModelWithName
 from .ta_load_diffusion_model_with_name import TALoadDiffusionModelWithName
 from .ta_load_gguf_model_with_name import TALoadGGUFModelWithName
@@ -27,7 +28,7 @@ from .ta_lmstudio_model_selector import (
     NODE_DISPLAY_NAME_MAPPINGS as MODEL_SELECTOR_DISPLAY
 )
 
-# Node class mappings
+# Node class mappings - Base loaders
 NODE_CLASS_MAPPINGS = {
     "TALoadCheckpointModelWithName": TALoadCheckpointModelWithName,
     "TALoadDiffusionModelWithName": TALoadDiffusionModelWithName,
@@ -43,7 +44,7 @@ NODE_CLASS_MAPPINGS.update(LOAD_ON_RUN_MAPPINGS)
 # Add LM Studio Model Selector Nodes
 NODE_CLASS_MAPPINGS.update(MODEL_SELECTOR_MAPPINGS)
 
-# Display names for the UI
+# Display names for the UI - Base loaders
 NODE_DISPLAY_NAME_MAPPINGS = {
     "TALoadCheckpointModelWithName": "TA Load Checkpoint Model (with Name)",
     "TALoadDiffusionModelWithName": "TA Load Diffusion Model (with Name)",
@@ -59,4 +60,5 @@ NODE_DISPLAY_NAME_MAPPINGS.update(LOAD_ON_RUN_DISPLAY)
 # Add LM Studio Model Selector display names
 NODE_DISPLAY_NAME_MAPPINGS.update(MODEL_SELECTOR_DISPLAY)
 
+# Export for ComfyUI
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
