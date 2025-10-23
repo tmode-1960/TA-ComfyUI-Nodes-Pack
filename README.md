@@ -13,4 +13,4 @@ These are model loaders with an additional output that displays the model name s
 
 ___
 
-***2. Extension for EBU LM Studio***
+***2. Extension for EBU-LMStudio*** (https://github.com/burnsbert/ComfyUI-EBU-LMStudio)
