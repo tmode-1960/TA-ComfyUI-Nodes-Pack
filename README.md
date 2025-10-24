@@ -23,6 +23,6 @@ Selection field for all models installed in LM Studio. Vision models are marked 
 3. ***ta_ebu_lmstudio_vision_node (image2prompt)*** \
 Settings for Image2Prompt Generation
   
-_These are extensions for the EBU-LMStudio custom node. The ComfyUI-EBU-LMStudio must be installed on your system._
+_These are extensions for the EBU-LMStudio custom node. The ComfyUI-EBU-LMStudio node must be installed on your system._
 
 ![Projekt-Logo](images/TA_LMStudio_Load_(On_Run).png) ![Projekt-Logo](images/TA_EBU_LMStudio_Vision_Node.png)
