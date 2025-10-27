@@ -1,7 +1,20 @@
 # TA-ComfyUI-Nodes-Pack  
 A collection of various useful ComfyUI custom nodes  
- 
-  
+
+## Installation
+
+### Requirements
+This custom node pack requires:
+- **ComfyUI-GGUF** - Install it via ComfyUI Manager
+
+### Installing ComfyUI-GGUF
+1. Open ComfyUI Manager
+2. Search for "ComfyUI-GGUF"
+3. Click "Install"
+4. Restart ComfyUI
+
+___
+
 ## 1. Model Loaders   
 1. ta_load_diffusion_model_with_name  
 2. ta_load_checkpoint_model_with_name 
