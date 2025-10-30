@@ -27,6 +27,8 @@ class TALMStudioLoadOnRun:
         # Other known vision models
         'fuyu', 'kosmos', 'idefics', 'otter', 'flamingo', 'blip',
         'deepseek-vl', 'yi-vl', 'mplug', 'sphinx', 'video-llama',
+        # OCR models
+        'ocr', 'gliese',
     ]
     
     @classmethod
