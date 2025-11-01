@@ -22,7 +22,7 @@ ___
 
 _These are model loaders with an additional output that displays the model name so that it can be used in the further workflow._  
 
-![Projekt-Logo](images/TA_Load_Diffusion_Model_(with_Name).png)
+![Load Diffusion Model](images/TA_Load_Diffusion_Model_(with_Name).png)
 
 ___  
   
@@ -38,4 +38,14 @@ Settings for Image2Prompt Generation
   
 _These are extensions for the EBU-LMStudio custom node. The ComfyUI-EBU-LMStudio node must be installed on your system._
 
-![Projekt-Logo](images/TA_LMStudio_Load_(On_Run).png) ![Projekt-Logo](images/TA_EBU_LMStudio_Vision_Node.png)
+![LM Studio Load On Run](images/TA_LMStudio_Load_(On_Run).png) ![LM Studio Vision Node](images/TA_EBU_LMStudio_Vision_Node.png)
+
+___ 
+
+## v1.0.5 (2025-11-01)
+
+1. added ***ta_lmstudio_smart_loader***, a simple and fast loader for LM Studio Models
+2. changed ***ta_lmstudio_load_on_run*** for more control if needed
+
+![LM Studio Smart Loader](images/TA_LMStudion_Smart_Loader.png) ![LM Studio Load On Run](images/TA_LMStudio_Load_(On_Run)_new.png)
+![LM Studio Load On Run](images/TA_LMStudio_Load_(On_Run)_new2.png)
