@@ -23,3 +23,9 @@ Issues = "https://github.com/tmode-1960/TA-ComfyUI-Nodes-Pack/issues"
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
+
+# ComfyUI Registry Konfiguration
+[tool.comfy]
+PublisherId = "tmode-1960"
+DisplayName = "TA ComfyUI Nodes Pack"
+Icon = ""  # Optional: URL zu einem Icon
