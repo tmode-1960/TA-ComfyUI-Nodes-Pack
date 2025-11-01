@@ -2,7 +2,7 @@
   "name": "TA-ComfyUI-Nodes-Pack",
   "author": "tmode-1960",
   "description": "Some useful nodes for ComfyUI (model loader & extensions for EBU-LMStudio) ",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "repository": "https://github.com/tmode-1960/TA-ComfyUI-Nodes-Pack",
   "license": "Apache 2.0"
 }

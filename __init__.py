@@ -3,6 +3,7 @@ TA Nodes Pack - Custom Nodes for ComfyUI
 Contains nodes for loading various model types with names and text processing
 Plus LM Studio Vision Integration for Image-to-Prompt
 Plus LM Studio Load On Run for controlled model loading
+Plus LM Studio Smart Loader for reliable auto-loading
 """
 
 # Import base loader nodes
@@ -21,6 +22,17 @@ from .ta_lmstudio_load_on_run import (
     NODE_CLASS_MAPPINGS as LOAD_ON_RUN_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as LOAD_ON_RUN_DISPLAY
 )
+
+# Import LM Studio Smart Loader (NEW - Recommended)
+try:
+    from .ta_lmstudio_smart_loader import (
+        NODE_CLASS_MAPPINGS as SMART_LOADER_MAPPINGS,
+        NODE_DISPLAY_NAME_MAPPINGS as SMART_LOADER_DISPLAY
+    )
+    HAS_SMART_LOADER = True
+except ImportError:
+    print("[TA-Nodes] Smart Loader not found - install ta_lmstudio_smart_loader.py for better reliability")
+    HAS_SMART_LOADER = False
 
 # Import LM Studio Model Selector Nodes
 from .ta_lmstudio_model_selector import (
@@ -41,6 +53,11 @@ NODE_CLASS_MAPPINGS.update(LMSTUDIO_VISION_MAPPINGS)
 # Add LM Studio Load On Run Node
 NODE_CLASS_MAPPINGS.update(LOAD_ON_RUN_MAPPINGS)
 
+# Add LM Studio Smart Loader (if available)
+if HAS_SMART_LOADER:
+    NODE_CLASS_MAPPINGS.update(SMART_LOADER_MAPPINGS)
+    print("[TA-Nodes] ✓ Smart Loader enabled (recommended)")
+
 # Add LM Studio Model Selector Nodes
 NODE_CLASS_MAPPINGS.update(MODEL_SELECTOR_MAPPINGS)
 
@@ -56,6 +73,10 @@ NODE_DISPLAY_NAME_MAPPINGS.update(LMSTUDIO_VISION_DISPLAY)
 
 # Add LM Studio Load On Run display names
 NODE_DISPLAY_NAME_MAPPINGS.update(LOAD_ON_RUN_DISPLAY)
+
+# Add LM Studio Smart Loader display names (if available)
+if HAS_SMART_LOADER:
+    NODE_DISPLAY_NAME_MAPPINGS.update(SMART_LOADER_DISPLAY)
 
 # Add LM Studio Model Selector display names
 NODE_DISPLAY_NAME_MAPPINGS.update(MODEL_SELECTOR_DISPLAY)

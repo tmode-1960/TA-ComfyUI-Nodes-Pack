@@ -41,18 +41,30 @@ class TALMStudioLoadOnRun:
                     "default": models[0] if models else "llava-v1.5"
                 }),
                 "context_length": ("INT", {
-                    "default": 8192,
+                    "default": 4096,
                     "min": 512,
                     "max": 131072,
                     "step": 512
                 }),
+                "gpu_mode": (["auto", "gpu_only", "hybrid", "cpu_only"], {
+                    "default": "auto",
+                    "tooltip": "auto=let LMStudio decide, gpu_only=all on GPU, hybrid=GPU+CPU (for 27B), cpu_only=CPU only"
+                }),
                 "wait_time": ("INT", {
-                    "default": 8,
+                    "default": 10,
                     "min": 1,
                     "max": 30,
                     "step": 1,
                     "display": "number",
-                    "tooltip": "Seconds to wait after loading (8-10s recommended for large models)"
+                    "tooltip": "Seconds to wait after loading (10-15s for large models)"
+                }),
+                "unload_wait": ("INT", {
+                    "default": 5,
+                    "min": 0,
+                    "max": 20,
+                    "step": 1,
+                    "display": "number",
+                    "tooltip": "Extra seconds after unload for VRAM cleanup"
                 }),
                 "skip_unload": ("BOOLEAN", {
                     "default": False,
@@ -203,8 +215,8 @@ class TALMStudioLoadOnRun:
                 cls._model_paths[model] = model_path
         return defaults
 
-    def try_unload(self):
-        """Attempts to unload, tolerates errors"""
+    def try_unload(self, unload_wait=5):
+        """Attempts to unload with extended cleanup time"""
         print("[TA-LoadOnRun] Attempting to unload models...")
         
         try:
@@ -212,7 +224,7 @@ class TALMStudioLoadOnRun:
                 ['lms', 'unload', '--all', '-y'],
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=15,
                 encoding='utf-8',
                 errors='replace'
             )
@@ -220,21 +232,25 @@ class TALMStudioLoadOnRun:
             output = (result.stdout + result.stderr).lower()
             
             if 'no models to unload' in output or 'no models loaded' in output:
-                print(f"[TA-LoadOnRun] ✓ Already unloaded")
+                print(f"[TA-LoadOnRun] ✓ No models loaded")
                 return True
-            elif result.returncode == 0:
-                print(f"[TA-LoadOnRun] ✓ Unload successful")
-                time.sleep(2)
+            elif result.returncode == 0 or 'unloaded' in output:
+                print(f"[TA-LoadOnRun] ✓ Models unloaded")
+                if unload_wait > 0:
+                    print(f"[TA-LoadOnRun] Waiting {unload_wait}s for VRAM cleanup...")
+                    time.sleep(unload_wait)
                 return True
             else:
-                print(f"[TA-LoadOnRun] ⚠ Unload returned code {result.returncode}")
+                print(f"[TA-LoadOnRun] ⚠ Unload code {result.returncode}, continuing...")
+                time.sleep(min(unload_wait, 3))
                 return False
                 
         except subprocess.TimeoutExpired:
-            print(f"[TA-LoadOnRun] ⚠ Unload timeout - continuing anyway")
+            print(f"[TA-LoadOnRun] ⚠ Unload timeout")
+            time.sleep(min(unload_wait, 3))
             return False
         except Exception as e:
-            print(f"[TA-LoadOnRun] ⚠ Unload error: {e} - continuing anyway")
+            print(f"[TA-LoadOnRun] ⚠ Unload error: {e}")
             return False
 
     def is_model_loaded(self, model_name):
@@ -285,94 +301,121 @@ class TALMStudioLoadOnRun:
         print(f"[TA-LoadOnRun] ⚠ Could not verify model after {max_wait}s")
         return False
 
-    def load_model(self, display_name, context_length, wait_time, skip_unload):
-        """Loads the model"""
-        # Remove (V) for the actual load command
+    def load_model(self, display_name, context_length, gpu_mode, wait_time, unload_wait, skip_unload):
+        """Loads model with flexible GPU mode"""
         clean_name = display_name.replace(" (V)", "")
         full_path = self._model_paths.get(display_name, clean_name)
         
         print(f"[TA-LoadOnRun] === LOADING MODEL ===")
-        print(f"[TA-LoadOnRun] Display: {display_name}")
+        print(f"[TA-LoadOnRun] Model: {display_name}")
         print(f"[TA-LoadOnRun] Path: {full_path}")
-        print(f"[TA-LoadOnRun] Wait time: {wait_time}s")
+        print(f"[TA-LoadOnRun] Context: {context_length}")
+        print(f"[TA-LoadOnRun] GPU Mode: {gpu_mode}")
+        print(f"[TA-LoadOnRun] Wait: {wait_time}s / Unload wait: {unload_wait}s")
+        
+        # Check if model is too large
+        is_large_model = any(x in display_name.lower() for x in ['27b', '30b', '34b', '70b'])
+        if is_large_model and gpu_mode == "gpu_only":
+            print(f"\n{'!'*60}")
+            print(f"[TA-LoadOnRun] ⚠⚠⚠ WARNING ⚠⚠⚠")
+            print(f"[TA-LoadOnRun] Large model ({display_name}) with gpu_only!")
+            print(f"[TA-LoadOnRun] This will likely fail on 24GB VRAM")
+            print(f"[TA-LoadOnRun] Recommended: Use 'hybrid' or 'auto' mode")
+            print(f"{'!'*60}\n")
         
         try:
-            # Try to unload (optional)
+            # Unload if needed
             if not skip_unload:
-                unload_ok = self.try_unload()
-                if unload_ok:
-                    time.sleep(2)
-                else:
-                    print(f"[TA-LoadOnRun] Continuing despite unload issues...")
-                    time.sleep(1)
+                self.try_unload(unload_wait)
             else:
-                print(f"[TA-LoadOnRun] Skipping unload (skip_unload=True)")
+                print(f"[TA-LoadOnRun] Skipping unload")
             
-            # Load model
-            load_cmd = [
-                'lms', 'load', full_path, '-y',
-                f'--context-length={context_length}',
-                '--gpu=1'
-            ]
+            # Build load command
+            load_cmd = ['lms', 'load', full_path, '-y', f'--context-length={context_length}']
             
-            print(f"[TA-LoadOnRun] Loading: {' '.join(load_cmd)}")
+            # Set GPU mode
+            if gpu_mode == "gpu_only":
+                load_cmd.append('--gpu=max')
+            elif gpu_mode == "hybrid":
+                load_cmd.append('--gpu=1')  # Standard GPU with automatic offload
+            elif gpu_mode == "cpu_only":
+                load_cmd.append('--gpu=0')
+            else:  # auto
+                # Let LM Studio decide based on model size
+                if is_large_model:
+                    load_cmd.append('--gpu=1')  # Use hybrid for large models
+                    print(f"[TA-LoadOnRun] Auto mode: Using hybrid (GPU+CPU) for large model")
+                else:
+                    load_cmd.append('--gpu=max')
+                    print(f"[TA-LoadOnRun] Auto mode: Using gpu_only for standard model")
+            
+            print(f"[TA-LoadOnRun] Command: {' '.join(load_cmd)}")
             
             result = subprocess.run(
                 load_cmd,
                 capture_output=True,
                 text=True,
-                timeout=120,
+                timeout=180,
                 encoding='utf-8',
                 errors='replace'
             )
             
-            print(f"[TA-LoadOnRun] Return code: {result.returncode}")
+            # Check for VRAM errors
+            error_text = (result.stdout + result.stderr).lower()
+            has_vram_error = any(x in error_text for x in [
+                'unable to allocate', 'cuda', 'out of memory', 'vram'
+            ])
+            
+            if has_vram_error:
+                print(f"\n{'='*60}")
+                print(f"[TA-LoadOnRun] ⚠⚠⚠ VRAM ALLOCATION ERROR ⚠⚠⚠")
+                print(f"[TA-LoadOnRun]")
+                print(f"[TA-LoadOnRun] Model: {display_name}")
+                print(f"[TA-LoadOnRun] This model is TOO LARGE for your 24GB VRAM!")
+                print(f"[TA-LoadOnRun]")
+                print(f"[TA-LoadOnRun] 💡 QUICK FIXES (in order of effectiveness):")
+                print(f"[TA-LoadOnRun]")
+                print(f"[TA-LoadOnRun] 1. Use HYBRID mode instead of gpu_only")
+                print(f"[TA-LoadOnRun]    → Change gpu_mode to 'hybrid'")
+                print(f"[TA-LoadOnRun]")
+                print(f"[TA-LoadOnRun] 2. Use a SMALLER model (Recommended!)")
+                print(f"[TA-LoadOnRun]    → llava-v1.5-13b (V)")
+                print(f"[TA-LoadOnRun]    → qwen2-vl-7b-instruct (V)")
+                print(f"[TA-LoadOnRun]    → pixtral-12b (V)")
+                print(f"[TA-LoadOnRun]")
+                print(f"[TA-LoadOnRun] 3. Reduce context to 512-1024")
+                print(f"[TA-LoadOnRun]")
+                print(f"[TA-LoadOnRun] 4. Use smaller quantization")
+                print(f"[TA-LoadOnRun]    → Q3_K_M or Q2_K instead of Q4_0")
+                print(f"{'='*60}\n")
             
             if result.returncode == 0:
-                print(f"[TA-LoadOnRun] ✓ Load command completed")
-                
-                # Warning for too short wait_time
-                if wait_time < 3:
-                    print(f"[TA-LoadOnRun] ⚠ WARNING: wait_time={wait_time}s is too short!")
-                    print(f"[TA-LoadOnRun] ⚠ Recommended: 8-10s for reliable loading")
-                
+                print(f"[TA-LoadOnRun] ✓ Load completed")
                 print(f"[TA-LoadOnRun] Waiting {wait_time}s for initialization...")
                 time.sleep(wait_time)
                 
-                # Verify
-                if self.wait_for_model_ready(display_name, max_wait=15):
-                    print(f"[TA-LoadOnRun] ✓✓✓ MODEL READY! ✓✓✓")
+                if self.wait_for_model_ready(display_name, max_wait=20):
+                    print(f"[TA-LoadOnRun] ✓✓✓ MODEL READY ✓✓✓")
                     return True, "Loaded and ready"
                 else:
-                    print(f"[TA-LoadOnRun] ⚠ Load completed but verification failed")
-                    print(f"[TA-LoadOnRun] ⚠ Model might still work, trying anyway...")
+                    print(f"[TA-LoadOnRun] ⚠ Verification failed, might still work")
                     return True, "Loaded (not verified)"
             else:
-                print(f"[TA-LoadOnRun] ✗ Load failed with code {result.returncode}")
+                print(f"[TA-LoadOnRun] ✗ Load failed (code {result.returncode})")
                 if result.stderr:
-                    print(f"[TA-LoadOnRun] Error: {result.stderr[:300]}")
-                return False, f"Load failed (code {result.returncode})"
+                    print(f"[TA-LoadOnRun] Error: {result.stderr[:400]}")
+                return False, f"Load failed"
                 
         except subprocess.TimeoutExpired:
-            print("[TA-LoadOnRun] ✗ Load timeout (>120s)")
+            print("[TA-LoadOnRun] ✗ Timeout (>180s)")
             return False, "Timeout"
         except Exception as e:
             print(f"[TA-LoadOnRun] ✗ Error: {e}")
             return False, f"Error: {str(e)}"
 
-    def load_and_return(self, model, context_length, wait_time, skip_unload):
+    def load_and_return(self, model, context_length, gpu_mode, wait_time, unload_wait, skip_unload):
         """Executed on RUN"""
         
-        # Warning for too short wait_time
-        if wait_time < 3:
-            print(f"\n{'!'*60}")
-            print(f"[TA-LoadOnRun] ⚠⚠⚠ WARNING ⚠⚠⚠")
-            print(f"[TA-LoadOnRun] wait_time={wait_time}s is TOO SHORT!")
-            print(f"[TA-LoadOnRun] This may cause 'Model not loaded' errors!")
-            print(f"[TA-LoadOnRun] RECOMMENDED: Set wait_time to 8-10s")
-            print(f"{'!'*60}\n")
-        
-        # API name (remove (V))
         clean_model = model.replace(" (V)", "")
         if '/' in clean_model:
             api_name = clean_model.split('/')[-1]
@@ -380,19 +423,19 @@ class TALMStudioLoadOnRun:
             api_name = clean_model
         
         print(f"\n{'='*60}")
-        print(f"[TA-LoadOnRun] ===== WORKFLOW EXECUTION =====")
+        print(f"[TA-LoadOnRun] ===== WORKFLOW START =====")
         print(f"[TA-LoadOnRun] Model: {model}")
-        print(f"[TA-LoadOnRun] Wait time: {wait_time}s")
-        print(f"[TA-LoadOnRun] Skip unload: {skip_unload}")
+        print(f"[TA-LoadOnRun] Context: {context_length}")
+        print(f"[TA-LoadOnRun] GPU Mode: {gpu_mode}")
+        print(f"[TA-LoadOnRun] Wait: {wait_time}s | Unload: {unload_wait}s")
         print(f"{'='*60}\n")
         
-        # Load model
-        success, status = self.load_model(model, context_length, wait_time, skip_unload)
+        success, status = self.load_model(model, context_length, gpu_mode, wait_time, unload_wait, skip_unload)
         
         if success:
             print(f"\n[TA-LoadOnRun] ✓ READY FOR VISION NODE\n")
         else:
-            print(f"\n[TA-LoadOnRun] ✗ LOAD FAILED\n")
+            print(f"\n[TA-LoadOnRun] ✗ LOAD FAILED - See tips above\n")
         
         return (api_name, status)
 
