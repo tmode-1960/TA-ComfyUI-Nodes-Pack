@@ -1,0 +1,25 @@
+[project]
+name = "TA-ComfyUI-Nodes-Pack"
+version = "1.0.5"
+description = "Some useful nodes for ComfyUI (model loader & extensions for FBU-LMStudio)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "tmode-1960", email = "info@thomo.art"}
+]
+keywords = ["comfyui", "nodes", "custom-nodes"]
+
+dependencies = [
+    # Hier können Sie erforderliche Python-Pakete auflisten
+    # z.B. "numpy>=1.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/tmode-1960/TA-ComfyUI-Nodes-Pack"
+Repository = "https://github.com/tmode-1960/TA-ComfyUI-Nodes-Pack"
+Issues = "https://github.com/tmode-1960/TA-ComfyUI-Nodes-Pack/issues"
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
