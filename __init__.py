@@ -4,6 +4,7 @@ Contains nodes for loading various model types with names and text processing
 Plus LM Studio Vision Integration for Image-to-Prompt
 Plus LM Studio Load On Run for controlled model loading
 Plus LM Studio Smart Loader for reliable auto-loading
+Plus TA Prompt Merger for multi-layer image prompt generation
 """
 
 # Import base loader nodes
@@ -40,6 +41,23 @@ from .ta_lmstudio_model_selector import (
     NODE_DISPLAY_NAME_MAPPINGS as MODEL_SELECTOR_DISPLAY
 )
 
+# Import TA Prompt Merger (NEW - Multi-layer prompt generation)
+try:
+    from .ta_promptmerger import TAPromptMerger
+    HAS_PROMPT_MERGER = True
+except ImportError:
+    print("[TA-Nodes] TA Prompt Merger not found - install ta_promptmerger.py for multi-layer prompt generation")
+    HAS_PROMPT_MERGER = False
+
+# --- NEU: Import TA Filename Generator ---
+try:
+    from .ta_filename_generator import TAFilenameGenerator
+    HAS_FILENAME_GENERATOR = True
+except ImportError:
+    print("[TA-Nodes] TA Filename Generator not found - install ta_filename_generator.py")
+    HAS_FILENAME_GENERATOR = False
+# ------------------------------------------
+
 # Node class mappings - Base loaders
 NODE_CLASS_MAPPINGS = {
     "TALoadCheckpointModelWithName": TALoadCheckpointModelWithName,
@@ -61,6 +79,17 @@ if HAS_SMART_LOADER:
 # Add LM Studio Model Selector Nodes
 NODE_CLASS_MAPPINGS.update(MODEL_SELECTOR_MAPPINGS)
 
+# Add TA Prompt Merger (if available)
+if HAS_PROMPT_MERGER:
+    NODE_CLASS_MAPPINGS["TAPromptMerger"] = TAPromptMerger
+    print("[TA-Nodes] ✓ TA Prompt Merger enabled")
+
+# --- NEU: Add TA Filename Generator (if available) ---
+if HAS_FILENAME_GENERATOR:
+    NODE_CLASS_MAPPINGS["TAFilenameGenerator"] = TAFilenameGenerator
+    print("[TA-Nodes] ✓ TA Filename Generator enabled")
+# ----------------------------------------------------
+
 # Display names for the UI - Base loaders
 NODE_DISPLAY_NAME_MAPPINGS = {
     "TALoadCheckpointModelWithName": "TA Load Checkpoint Model (with Name)",
@@ -80,6 +109,15 @@ if HAS_SMART_LOADER:
 
 # Add LM Studio Model Selector display names
 NODE_DISPLAY_NAME_MAPPINGS.update(MODEL_SELECTOR_DISPLAY)
+
+# Add TA Prompt Merger display name (if available)
+if HAS_PROMPT_MERGER:
+    NODE_DISPLAY_NAME_MAPPINGS["TAPromptMerger"] = "TA Prompt Merger"
+
+# --- NEU: Add TA Filename Generator display name (if available) ---
+if HAS_FILENAME_GENERATOR:
+    NODE_DISPLAY_NAME_MAPPINGS["TAFilenameGenerator"] = "TA Filename Generator"
+# -----------------------------------------------------------------
 
 # Export for ComfyUI
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
