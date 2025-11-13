@@ -63,7 +63,7 @@ A delimiter (e.g., "-")
 
 Ready to Use: The final strings (like TA-Outputs\2025-11-13\TA-v2.50-Modelname-202511132027.png) are passed to a SaveImage node, which will automatically create the directories and save the image.
 
-![TA Filename Generator](images\TA_Filename_Generator.png)
+![TA Filename Generator](images/TA_Filename_Generator.png)
 
 ---
 ## v1.0.6 (2025-11-13)
