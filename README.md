@@ -42,6 +42,34 @@ _These are extensions for the EBU-LMStudio custom node. The ComfyUI-EBU-LMStudio
 
 ___ 
 
+## 3. Filename Generator
+The TAFilenameGenerator is a utility node for ComfyUI designed to automatically generate complex and organized file paths for saving images.
+
+It outputs two separate strings:  
+filename: The complete path and name for the main generated image.  
+filename_up: A corresponding path and name for an upscaled version (it adds a suffix like "UPSCALED").
+
+_Key Features_  
+Dynamic Folders: It allows you to specify a main output_folder and a subfolder.
+
+Date Parsing: The subfolder field can parse date/time codes (e.g., an input of %Y-%m-%d will be converted to a folder named 2025-11-13).  
+Custom Naming: It builds the filename by combining several user-defined widgets:
+
+name_prefix (e.g., "TA")  
+wf_version (e.g., "v2.50")  
+The model_name (from its input)  
+A date_format (selected from a dropdown list)  
+A delimiter (e.g., "-")
+
+Ready to Use: The final strings (like TA-Outputs\2025-11-13\TA-v2.50-Modelname-202511132027.png) are passed to a SaveImage node, which will automatically create the directories and save the image.
+
+![TA Filename Generator](images\TA_Filename_Generator.png)
+
+---
+## v1.0.6 (2025-11-13)
+
+1. added ***ta_filename_generator***, a node for creating image output filenames
+---
 ## v1.0.5 (2025-11-01)
 
 1. added ***ta_lmstudio_smart_loader***, a simple and fast loader for LM Studio Models
