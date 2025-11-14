@@ -68,7 +68,7 @@ Ready to Use: The final strings (like TA-Outputs\2025-11-13\TA-v2.50-Modelname-2
 ---
 ## v1.0.6 (2025-11-13)
 
-1. added ***ta_filename_generator***, a node for creating image output filenames
+1. added ***ta_filename_generator***, a node for creating image output filenames and folders
 ---
 ## v1.0.5 (2025-11-01)
 
