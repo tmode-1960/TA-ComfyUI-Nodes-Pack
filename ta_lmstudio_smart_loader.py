@@ -18,7 +18,7 @@ class TALMStudioSmartLoader:
     
     _model_paths = {}
     
-    # Vision model keywords
+    # Vision model keywords - 'magistral' HINZUGEFÜGT
     _vision_keywords = [
         'vision', 'llava', 'pixtral', 'minicpm-v', 'cogvlm', 'internvl',
         'molmo', 'aria', 'phi-3-vision', 'phi-3.5-vision',
@@ -28,6 +28,7 @@ class TALMStudioSmartLoader:
         'fuyu', 'kosmos', 'idefics', 'otter', 'flamingo', 'blip',
         'deepseek-vl', 'yi-vl', 'mplug', 'sphinx', 'video-llama',
         'ocr', 'gliese',
+        'magistral', # Hinzugefügt, um mistralai/magistral-small-2509 als Vision Model zu kennzeichnen
     ]
     
     @classmethod
@@ -67,6 +68,8 @@ class TALMStudioSmartLoader:
     def is_vision_model(cls, model_name):
         """Check if model is a vision model"""
         model_lower = model_name.lower()
+        
+        # Prüft, ob ein positives Vision-Keyword im Modellnamen enthalten ist
         return any(keyword in model_lower for keyword in cls._vision_keywords)
 
     @classmethod
