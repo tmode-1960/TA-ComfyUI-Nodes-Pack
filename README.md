@@ -66,6 +66,28 @@ Ready to Use: The final strings (like TA-Outputs\2025-11-13\TA-v2.50-Modelname-2
 ![TA Filename Generator](images/TA_Filename_Generator.png)
 
 ---
+
+## 4. Prompt Conroller
+TA Prompt Controller (Switch) A custom node for ComfyUI designed to manage and route text inputs within a workflow. It serves as a central control unit to switch between manual text input and generated text (e.g., from LLMs or Vision models).
+
+Key Features:  
+    - Dual Input: Accepts both a manual text string and a generated prompt string.  
+    - Mode Switching: Offers five modes to control the output:  
+      1. Manual Only: Passes through the user's manual text, ignoring generated input.  
+      2. Generated Only: Passes through the generated text (e.g., from LM Studio), ignoring manual input.  
+      3. Combine: Manual + Generated: Prepends the manual text to the generated text.  
+      4. Combine: Generated + Manual: Appends the manual text to the generated text.  
+      5. Clear / Empty: Outputs an empty string (acts as a reset/mute).  
+      
+    - Custom Delimiter: Allows defining a separator (e.g., , ) for combining modes.
+
+Use Case: Ideal for workflows that alternate between Text-to-Image (manual prompting), Image-to-Prompt (vision analysis), and Text-Expansion (LLM enhancement) without needing to rewire nodes.
+
+---
+## v1.0.8 (2025-11-25)  
+
+1. added ***ta_prompt_controller***, a node designed to manage and route text inputs within a workflow.
+---
 ## v1.0.6 (2025-11-13)
 
 1. added ***ta_filename_generator***, a node for creating image output filenames and folders
