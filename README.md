@@ -67,7 +67,7 @@ Ready to Use: The final strings (like TA-Outputs\2025-11-13\TA-v2.50-Modelname-2
 
 ---
 
-## 4. Prompt Conroller
+## 4. Prompt Controller
 TA Prompt Controller (Switch) A custom node for ComfyUI designed to manage and route text inputs within a workflow. It serves as a central control unit to switch between manual text input and generated text (e.g., from LLMs or Vision models).
 
 Key Features:  
