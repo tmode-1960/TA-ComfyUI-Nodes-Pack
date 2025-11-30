@@ -1,29 +1,26 @@
 """
 TA Nodes Pack - Custom Nodes for ComfyUI
-Contains nodes for loading various model types with names and text processing
-Plus LM Studio Vision Integration for Image-to-Prompt
-Plus LM Studio Load On Run for controlled model loading
-Plus LM Studio Smart Loader for reliable auto-loading
+Version: 1.0.8
 """
 
-# Import base loader nodes
+# 1. Base Loader Nodes
 from .ta_load_checkpoint_model_with_name import TALoadCheckpointModelWithName
 from .ta_load_diffusion_model_with_name import TALoadDiffusionModelWithName
 from .ta_load_gguf_model_with_name import TALoadGGUFModelWithName
 
-# Import LM Studio Vision Nodes
+# 2. LM Studio Vision Nodes (Image2Prompt & Tools)
 from .ta_ebu_lmstudio_vision_node import (
     NODE_CLASS_MAPPINGS as LMSTUDIO_VISION_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as LMSTUDIO_VISION_DISPLAY
 )
 
-# Import LM Studio Load On Run Node
+# 3. LM Studio Load On Run Node
 from .ta_lmstudio_load_on_run import (
     NODE_CLASS_MAPPINGS as LOAD_ON_RUN_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as LOAD_ON_RUN_DISPLAY
 )
 
-# Import LM Studio Smart Loader (NEW - Recommended)
+# 4. LM Studio Smart Loader
 try:
     from .ta_lmstudio_smart_loader import (
         NODE_CLASS_MAPPINGS as SMART_LOADER_MAPPINGS,
@@ -31,75 +28,77 @@ try:
     )
     HAS_SMART_LOADER = True
 except ImportError:
-    print("[TA-Nodes] Smart Loader not found - install ta_lmstudio_smart_loader.py for better reliability")
+    print("[TA-Nodes] Smart Loader not found - install ta_lmstudio_smart_loader.py")
     HAS_SMART_LOADER = False
 
-# Import LM Studio Model Selector Nodes
+# 5. LM Studio Model Selector Nodes
 from .ta_lmstudio_model_selector import (
     NODE_CLASS_MAPPINGS as MODEL_SELECTOR_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as MODEL_SELECTOR_DISPLAY
 )
 
-# --- NEU: Import TA Filename Generator ---
+# 6. TA Filename Generator
 try:
     from .ta_filename_generator import TAFilenameGenerator
     HAS_FILENAME_GENERATOR = True
 except ImportError:
     print("[TA-Nodes] TA Filename Generator not found - install ta_filename_generator.py")
     HAS_FILENAME_GENERATOR = False
-# ------------------------------------------
 
-# Node class mappings - Base loaders
+# 7. TA Prompt Controller (NEU)
+try:
+    from .ta_prompt_controller import TAPromptController
+    HAS_PROMPT_CONTROLLER = True
+except ImportError:
+    print("[TA-Nodes] TA Prompt Controller not found - install ta_prompt_controller.py")
+    HAS_PROMPT_CONTROLLER = False
+
+# --------------------------------------------------------------------------------
+# NODE REGISTRATION
+# --------------------------------------------------------------------------------
+
+# Initialize Mappings with Base Loaders
 NODE_CLASS_MAPPINGS = {
     "TALoadCheckpointModelWithName": TALoadCheckpointModelWithName,
     "TALoadDiffusionModelWithName": TALoadDiffusionModelWithName,
     "TALoadGGUFModelWithName": TALoadGGUFModelWithName,
 }
 
-# Add LM Studio Vision Nodes
-NODE_CLASS_MAPPINGS.update(LMSTUDIO_VISION_MAPPINGS)
-
-# Add LM Studio Load On Run Node
-NODE_CLASS_MAPPINGS.update(LOAD_ON_RUN_MAPPINGS)
-
-# Add LM Studio Smart Loader (if available)
-if HAS_SMART_LOADER:
-    NODE_CLASS_MAPPINGS.update(SMART_LOADER_MAPPINGS)
-    print("[TA-Nodes] ✓ Smart Loader enabled (recommended)")
-
-# Add LM Studio Model Selector Nodes
-NODE_CLASS_MAPPINGS.update(MODEL_SELECTOR_MAPPINGS)
-
-# --- NEU: Add TA Filename Generator (if available) ---
-if HAS_FILENAME_GENERATOR:
-    NODE_CLASS_MAPPINGS["TAFilenameGenerator"] = TAFilenameGenerator
-    print("[TA-Nodes] ✓ TA Filename Generator enabled")
-# ----------------------------------------------------
-
-# Display names for the UI - Base loaders
 NODE_DISPLAY_NAME_MAPPINGS = {
     "TALoadCheckpointModelWithName": "TA Load Checkpoint Model (with Name)",
     "TALoadDiffusionModelWithName": "TA Load Diffusion Model (with Name)",
     "TALoadGGUFModelWithName": "TA Load GGUF Model (with Name)",
 }
 
-# Add LM Studio Vision display names
+# Add LM Studio Vision Nodes
+NODE_CLASS_MAPPINGS.update(LMSTUDIO_VISION_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(LMSTUDIO_VISION_DISPLAY)
 
-# Add LM Studio Load On Run display names
+# Add LM Studio Load On Run Node
+NODE_CLASS_MAPPINGS.update(LOAD_ON_RUN_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(LOAD_ON_RUN_DISPLAY)
 
-# Add LM Studio Smart Loader display names (if available)
+# Add LM Studio Smart Loader (if available)
 if HAS_SMART_LOADER:
+    NODE_CLASS_MAPPINGS.update(SMART_LOADER_MAPPINGS)
     NODE_DISPLAY_NAME_MAPPINGS.update(SMART_LOADER_DISPLAY)
+    print("[TA-Nodes] ✓ Smart Loader enabled")
 
-# Add LM Studio Model Selector display names
+# Add LM Studio Model Selector Nodes
+NODE_CLASS_MAPPINGS.update(MODEL_SELECTOR_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(MODEL_SELECTOR_DISPLAY)
 
-# --- NEU: Add TA Filename Generator display name (if available) ---
+# Add TA Filename Generator (if available)
 if HAS_FILENAME_GENERATOR:
+    NODE_CLASS_MAPPINGS["TAFilenameGenerator"] = TAFilenameGenerator
     NODE_DISPLAY_NAME_MAPPINGS["TAFilenameGenerator"] = "TA Filename Generator"
-# -----------------------------------------------------------------
+    print("[TA-Nodes] ✓ TA Filename Generator enabled")
+
+# Add TA Prompt Controller (if available)
+if HAS_PROMPT_CONTROLLER:
+    NODE_CLASS_MAPPINGS["TAPromptController"] = TAPromptController
+    NODE_DISPLAY_NAME_MAPPINGS["TAPromptController"] = "TA Prompt Controller (Switch)"
+    print("[TA-Nodes] ✓ TA Prompt Controller enabled")
 
 # Export for ComfyUI
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
