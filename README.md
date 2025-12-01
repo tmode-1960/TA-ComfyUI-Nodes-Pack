@@ -78,7 +78,6 @@ Key Features:
       3. Combine: Manual + Generated: Prepends the manual text to the generated text.  
       4. Combine: Generated + Manual: Appends the manual text to the generated text.  
       5. Clear / Empty: Outputs an empty string (acts as a reset/mute).  
-      
     - Custom Delimiter: Allows defining a separator (e.g., , ) for combining modes.
 
 Use Case: Ideal for workflows that alternate between Text-to-Image (manual prompting), Image-to-Prompt (vision analysis), and Text-Expansion (LLM enhancement) without needing to rewire nodes.
