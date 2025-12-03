@@ -83,6 +83,12 @@ Key Features:
 Use Case: Ideal for workflows that alternate between Text-to-Image (manual prompting), Image-to-Prompt (vision analysis), and Text-Expansion (LLM enhancement) without needing to rewire nodes.
 
 ---
+## v1.0.10-v1.0.12 (2025-11-25)  
+1. increased max. possible max_tokens
+2. increased max. possible context_lenght
+3. increased max. possible wait_time
+
+---
 ## v1.0.9 (2025-11-25)  
 
 1. added ***ta_prompt_controller***, a node designed to manage and route text inputs within a workflow.
