@@ -52,7 +52,8 @@ class TALMStudioSmartLoader:
                 "max_wait": ("INT", {
                     "default": 30,
                     "min": 5,
-                    "max": 120,
+                    #"max": 120,
+                    "max": 600,
                     "step": 5,
                     "tooltip": "Maximum seconds to wait for model to be ready"
                 }),
