@@ -42,7 +42,8 @@ class TAEbuLMStudioVisionRequest:
                 "max_tokens": ("INT", {
                     "default": 500,
                     "min": 1,
-                    "max": 4096
+                    #"max": 4096
+                    "max": 131072 # ANGEPASST: Erhöhtes Maximum, um die Verwechslung mit der Kontextlänge zu vermeiden
                 }),
                 "server_url": ("STRING", {
                     "default": "http://localhost:1234",
