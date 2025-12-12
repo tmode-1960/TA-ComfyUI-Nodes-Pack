@@ -83,6 +83,24 @@ Key Features:
 Use Case: Ideal for workflows that alternate between Text-to-Image (manual prompting), Image-to-Prompt (vision analysis), and Text-Expansion (LLM enhancement) without needing to rewire nodes.
 
 ---
+
+## 5. Directory Captioning
+The `TA Directory Captioning` node is a powerful tool for batch-processing images in your workflow.  
+  
+  **Functionality:**
+
+1.  **LM Studio Integration:** Connects seamlessly to a local LM Studio server, utilizing a user-selected Vision Language Model (VLM) for multimodal processing.
+2.  **Batch Captioning:** Takes a specified folder path, iterates through all image files (`.png`, `.jpg`, etc.) within it, and sends each image to the VLM.
+3.  **English Output Focus:** Generates detailed, descriptive captions specifically tailored for use as prompts in English, ensuring high quality for subsequent text-to-image generation.
+4.  **Automatic Saving:** Saves the generated caption for each image as a corresponding `.txt` file in the same directory, enabling easy integration with datasets and other workflow steps.  
+  
+  ![TA Directory Captioning](images/ta_directory_captioning_node.png)
+
+---
+## v1.0.13 (2025-12-12)  
+1. added TA Directory Captioning Node
+
+---
 ## v1.0.10-v1.0.12 (2025-11-25)  
 1. increased max. possible max_tokens
 2. increased max. possible context_lenght
