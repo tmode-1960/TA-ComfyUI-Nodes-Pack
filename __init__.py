@@ -1,6 +1,6 @@
 """
 TA Nodes Pack - Custom Nodes for ComfyUI
-Version: 1.0.8
+Version: 1.0.9 (Updated for ta_captioning)
 """
 
 # 1. Base Loader Nodes
@@ -53,6 +53,14 @@ except ImportError:
     print("[TA-Nodes] TA Prompt Controller not found - install ta_prompt_controller.py")
     HAS_PROMPT_CONTROLLER = False
 
+# 8. TA Directory Captioning Node (NEU)
+try:
+    from .ta_directory_captioning_node import ta_captioning
+    HAS_CAPTIONING_NODE = True
+except ImportError:
+    print("[TA-Nodes] TA Directory Captioning Node not found - install ta_directory_captioning_node.py")
+    HAS_CAPTIONING_NODE = False
+
 # --------------------------------------------------------------------------------
 # NODE REGISTRATION
 # --------------------------------------------------------------------------------
@@ -99,6 +107,12 @@ if HAS_PROMPT_CONTROLLER:
     NODE_CLASS_MAPPINGS["TAPromptController"] = TAPromptController
     NODE_DISPLAY_NAME_MAPPINGS["TAPromptController"] = "TA Prompt Controller (Switch)"
     print("[TA-Nodes] ✓ TA Prompt Controller enabled")
+
+# Add TA Directory Captioning Node (NEU)
+if HAS_CAPTIONING_NODE:
+    NODE_CLASS_MAPPINGS["ta_captioning"] = ta_captioning
+    NODE_DISPLAY_NAME_MAPPINGS["ta_captioning"] = "TA Directory Captioning (LM Studio)"
+    print("[TA-Nodes] ✓ TA Directory Captioning Node enabled")
 
 # Export for ComfyUI
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
