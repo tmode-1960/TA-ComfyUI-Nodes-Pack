@@ -1,5 +1,6 @@
 # TA-ComfyUI-Nodes-Pack  
-A collection of various useful ComfyUI custom nodes  
+A collection of various useful ComfyUI custom nodes 
+Tested with Python 3.12 and pytorch 2.9.1+cu128
 
 ## Installation
 
