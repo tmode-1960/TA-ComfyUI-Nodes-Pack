@@ -1,6 +1,6 @@
 """
 TA Nodes Pack - Custom Nodes for ComfyUI
-Version: 1.0.9 (Updated for ta_captioning)
+Version: 1.1.0 (Updated with Image & Prompt Saver)
 """
 
 # 1. Base Loader Nodes
@@ -45,7 +45,7 @@ except ImportError:
     print("[TA-Nodes] TA Filename Generator not found - install ta_filename_generator.py")
     HAS_FILENAME_GENERATOR = False
 
-# 7. TA Prompt Controller (NEU)
+# 7. TA Prompt Controller
 try:
     from .ta_prompt_controller import TAPromptController
     HAS_PROMPT_CONTROLLER = True
@@ -53,13 +53,21 @@ except ImportError:
     print("[TA-Nodes] TA Prompt Controller not found - install ta_prompt_controller.py")
     HAS_PROMPT_CONTROLLER = False
 
-# 8. TA Directory Captioning Node (NEU)
+# 8. TA Directory Captioning Node
 try:
     from .ta_directory_captioning_node import ta_captioning
     HAS_CAPTIONING_NODE = True
 except ImportError:
     print("[TA-Nodes] TA Directory Captioning Node not found - install ta_directory_captioning_node.py")
     HAS_CAPTIONING_NODE = False
+
+# 9. TA Save Image With Prompt (NEU)
+try:
+    from .ta_save_image_with_prompt import TASaveImageWithPrompt
+    HAS_SAVE_IMAGE_PROMPT = True
+except ImportError:
+    print("[TA-Nodes] TA Save Image With Prompt not found - install ta_save_image_with_prompt.py")
+    HAS_SAVE_IMAGE_PROMPT = False
 
 # --------------------------------------------------------------------------------
 # NODE REGISTRATION
@@ -108,11 +116,17 @@ if HAS_PROMPT_CONTROLLER:
     NODE_DISPLAY_NAME_MAPPINGS["TAPromptController"] = "TA Prompt Controller (Switch)"
     print("[TA-Nodes] ✓ TA Prompt Controller enabled")
 
-# Add TA Directory Captioning Node (NEU)
+# Add TA Directory Captioning Node
 if HAS_CAPTIONING_NODE:
     NODE_CLASS_MAPPINGS["ta_captioning"] = ta_captioning
     NODE_DISPLAY_NAME_MAPPINGS["ta_captioning"] = "TA Directory Captioning (LM Studio)"
     print("[TA-Nodes] ✓ TA Directory Captioning Node enabled")
+
+# Add TA Save Image With Prompt (NEU)
+if HAS_SAVE_IMAGE_PROMPT:
+    NODE_CLASS_MAPPINGS["TASaveImageWithPrompt"] = TASaveImageWithPrompt
+    NODE_DISPLAY_NAME_MAPPINGS["TASaveImageWithPrompt"] = "TA Save Image & Prompt TXT"
+    print("[TA-Nodes] ✓ TA Save Image & Prompt TXT enabled")
 
 # Export for ComfyUI
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
