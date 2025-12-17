@@ -1,6 +1,6 @@
 [project]
 name = "TA-ComfyUI-Nodes-Pack"
-version = "1.0.13"
+version = "1.0.14"
 description = "Some useful nodes for ComfyUI (model loader with model_name output & extensions for EBU-LMStudio & Filename Generator)"
 readme = "README.md"
 requires-python = ">=3.8"
