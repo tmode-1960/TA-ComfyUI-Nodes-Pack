@@ -99,6 +99,18 @@ The `TA Directory Captioning` node is a powerful tool for batch-processing image
   ![TA Directory Captioning](images/ta_directory_captioning_node.png)
 
 ---
+
+## 6. TA Save Image & Prompt TXT
+  
+  **Functionality:**
+
+1.  The `TA Save Image & Prompt TXT` node is a node that can save an additional .txt file in your output-directory with the used prompt inside. You can switch this functionality on or off.
+
+---
+## v1.0.14 (2025-12-17)  
+1. added TA Save Image & Prompt TXT Node  
+
+---
 ## v1.0.13 (2025-12-12)  
 1. added TA Directory Captioning Node
 
