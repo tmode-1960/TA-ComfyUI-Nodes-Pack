@@ -1,4 +1,5 @@
 import os
+import datetime
 from PIL import Image
 import numpy as np
 import folder_paths
@@ -15,8 +16,8 @@ class TASaveImageWithPrompt:
             "required": {
                 "images": ("IMAGE",),
                 "filename_prefix": ("STRING", {"default": "ComfyUI"}),
-                "prompt_text": ("STRING", {"forceInput": True}),
-                # NEU: Der Schalter zum An-/Ausschalten
+                "positive_prompt": ("STRING", {"forceInput": True}),
+                "negative_prompt": ("STRING", {"forceInput": True}),
                 "save_txt": (["enabled", "disabled"], {"default": "enabled"}),
             },
         }
@@ -26,35 +27,48 @@ class TASaveImageWithPrompt:
     OUTPUT_NODE = True
     CATEGORY = "TA Nodes/utils"
 
-    def save_images(self, images, filename_prefix, prompt_text, save_txt):
-        # Ermittelt den Pfad basierend auf dem Prefix vom Generator
+    def save_images(self, images, filename_prefix, positive_prompt, negative_prompt, save_txt):
+        # Ermittelt den Pfad und den Counter (für identische Namen)
         full_output_folder, filename, counter, subfolder, filename_prefix = \
             folder_paths.get_save_image_path(filename_prefix, self.output_dir, images[0].shape[1], images[0].shape[0])
 
         results = list()
+        now = datetime.datetime.now()
+        date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
         
         for image in images:
             # Bild-Konvertierung
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             
-            # Basis-Dateiname ohne Endung
+            # Basis-Dateiname (identisch für PNG und TXT)
             file_name = f"{filename}_{counter:05}_"
             file = f"{file_name}.png"
             
-            # 1. Bild im Dateisystem speichern
+            # 1. Bild speichern
             img.save(os.path.join(full_output_folder, file), compress_level=4)
             
-            # 2. Textdatei nur speichern, wenn der Schalter auf "enabled" steht
+            # 2. Textdatei speichern (falls aktiviert)
             if save_txt == "enabled":
                 txt_file = f"{file_name}.txt"
+                
+                # Formatierung mit Datum und Prompts
+                output_text = (
+                    f"DATE / TIME: {date_time_str}\n"
+                    f"FILE: {file}\n"
+                    f"{'='*30}\n"
+                    f"POSITIVE PROMPT:\n{positive_prompt}\n\n"
+                    f"NEGATIVE PROMPT:\n{negative_prompt}\n"
+                    f"{'='*30}\n"
+                )
+                
                 try:
                     with open(os.path.join(full_output_folder, txt_file), "w", encoding="utf-8") as f:
-                        f.write(prompt_text)
+                        f.write(output_text)
                 except Exception as e:
-                    print(f"[TA-Nodes] Fehler beim Speichern der Prompt-Datei: {e}")
+                    print(f"[TA-Nodes] Fehler beim Speichern der TXT: {e}")
             
-            # Informationen für die UI-Vorschau (Bildanzeige)
+            # Vorschau-Daten für ComfyUI UI
             results.append({
                 "filename": file,
                 "subfolder": subfolder,
