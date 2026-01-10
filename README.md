@@ -1,6 +1,7 @@
 # TA-ComfyUI-Nodes-Pack  
 A collection of various useful ComfyUI custom nodes  
 
+**Tested with Python 3.12 and pytorch 2.9.1+cu130 and LM-Studio-0.3.37-1-x64**
 **Tested with Python 3.12 and pytorch 2.9.1+cu128 and LM-Studio-0.3.34-1-x64**  
 **Tested with Python 3.11 and pytorch 2.9.1+cu128 and LM-Studio-0.3.36-1-x64**
 
