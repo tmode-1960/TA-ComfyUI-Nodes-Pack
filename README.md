@@ -112,6 +112,10 @@ The `TA Directory Captioning` node is a powerful tool for batch-processing image
 
 ![TA Save Image & Prompt TXT](images/ta_save_image_with_prompt-2.png) 
 
+
+---
+## v1.0.17 (2026-02-15)  
+1. TA Save Image & Prompt TXT Node: Added an image output.
 ---
 ## v1.0.16 (2025-12-18)  
 1. TA Save Image & Prompt TXT Node: I fixed a bug that prevented the workflow data from being saved correctly in the .png file.
