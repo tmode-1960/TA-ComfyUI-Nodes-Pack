@@ -14,7 +14,7 @@ class TASaveImageWithPrompt(SaveImage):
 
     @classmethod
     def INPUT_TYPES(s):
-        # Wir holen die originalen Definitionen (inkl. hidden fields wie prompt und extra_pnginfo)
+        # Wir holen die originalen Definitionen
         types = SaveImage.INPUT_TYPES()
         # Wir fügen unsere Prompts hinzu
         types["required"].update({
@@ -24,18 +24,18 @@ class TASaveImageWithPrompt(SaveImage):
         })
         return types
 
-    RETURN_TYPES = ()
+    # --- ÄNDERUNG: Wir definieren den Rückgabetyp ---
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("IMAGE",)
+    # -----------------------------------------------
+    
     FUNCTION = "ta_save_images"
     OUTPUT_NODE = True
     CATEGORY = "TA Nodes/utils"
 
-    # Wir fügen **kwargs hinzu, um 'extra_pnginfo' und alle anderen versteckten Daten aufzufangen
     def ta_save_images(self, images, filename_prefix, positive_prompt, negative_prompt, save_txt, **kwargs):
         
-        # 1. Aufruf der originalen Methode
-        # Wir reichen einfach alles, was wir von ComfyUI erhalten haben (kwargs), 
-        # an die originale save_images Methode weiter. 
-        # Das enthält 'prompt', 'extra_pnginfo' etc. und sorgt für den Workflow im Bild.
+        # 1. Aufruf der originalen Methode (speichert das Bild und generiert Metadaten)
         snap_res = self.save_images(images=images, filename_prefix=filename_prefix, **kwargs)
         
         # 2. TXT-Logik
@@ -46,7 +46,7 @@ class TASaveImageWithPrompt(SaveImage):
             now = datetime.datetime.now()
             date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
 
-            # Counter zurückrechnen auf den Stand VOR dem Speichern durch die Original-Node
+            # Counter zurückrechnen auf den Stand VOR dem Speichern
             current_counter = counter - len(images)
 
             for i in range(len(images)):
@@ -71,4 +71,6 @@ class TASaveImageWithPrompt(SaveImage):
                 
                 current_counter += 1
 
-        return snap_res
+        # --- ÄNDERUNG: Wir geben die Bilder und die ursprünglichen UI-Ergebnisse zurück ---
+        # snap_res enthält die UI-Vorschau-Infos, wir hängen die 'images' für den Workflow-Output an.
+        return { "ui": snap_res["ui"], "result": (images,) }
