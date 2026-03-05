@@ -1,8 +1,13 @@
 # TA-ComfyUI-Nodes-Pack V2 (Next‑Gen)
 A collection of various ComfyUI custom nodes  
-- ta_load_checkpoint_model_with_name
-- ta_load_diffusion_model_with_name
-- ta_load_gguf_model_with_name
+
+- **ta_load_checkpoint_model_with_name**  
+```==> a checkpoint model loader with additional modelname output```
+- **ta_load_diffusion_model_with_name**  
+```==> a diffusion model loader with additional modelname output```
+- **ta_load_gguf_model_with_name**  
+```==> a gguf model loader with additional modelname output```
+
 
 ## Installation
 
