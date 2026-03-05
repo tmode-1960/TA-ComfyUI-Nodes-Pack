@@ -1,4 +1,4 @@
-# TA-ComfyUI-Nodes-Pack  
+# TA-ComfyUI-Nodes-Pack V2
 A collection of various useful ComfyUI custom nodes  
 
 ## Installation
