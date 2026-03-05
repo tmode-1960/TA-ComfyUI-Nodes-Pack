@@ -1,5 +1,8 @@
 # TA-ComfyUI-Nodes-Pack V2 (Next‑Gen)
-A collection of various useful ComfyUI custom nodes  
+A collection of various ComfyUI custom nodes  
+- ta_load_checkpoint_model_with_name
+- ta_load_diffusion_model_with_name
+- ta_load_gguf_model_with_name
 
 ## Installation
 
