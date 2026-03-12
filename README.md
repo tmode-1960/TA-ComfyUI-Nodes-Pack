@@ -10,8 +10,6 @@ Custom nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) by **thomo
 <details>
 <summary>Full workflow overview</summary>
 
-![Full workflow overview](images/screenshot_overview.png)
-
 </details>
 
 ---
