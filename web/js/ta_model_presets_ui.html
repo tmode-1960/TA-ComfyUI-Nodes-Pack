@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA Model Preset Editor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: #a78bfa;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: #1e1e38;
+            border: 1px solid #3d3d6e;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            max-width: 720px;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            color: #a78bfa;
+            margin-bottom: 16px;
+        }
+
+        #preset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .preset-row {
+            background: #16162a;
+            border: 1px solid #3d3d6e;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .preset-row.dragging  { opacity: 0.4; }
+        .preset-row.drag-over { border-color: #a78bfa; }
+
+        .row-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            user-select: none;
+            background: #1e1e38;
+        }
+        .row-header:hover { background: #25254a; }
+
+        .drag-handle {
+            cursor: grab;
+            color: #555;
+            font-size: 1.1rem;
+            padding: 0 4px;
+            user-select: none;
+        }
+        .drag-handle:active { cursor: grabbing; }
+
+        .preset-title {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        .preset-badge {
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #16162a;
+            color: #a78bfa;
+            border: 1px solid #3d3d6e;
+            font-family: monospace;
+        }
+
+        .chevron {
+            color: #555;
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+        }
+        .preset-row.open .chevron { transform: rotate(180deg); }
+
+        .row-body {
+            display: none;
+            padding: 14px 12px;
+            border-top: 1px solid #3d3d6e;
+        }
+        .preset-row.open .row-body { display: block; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .form-full { grid-column: 1 / -1; }
+
+        .field label {
+            display: block;
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .field select,
+        .field input[type="text"] {
+            width: 100%;
+            background: #16162a;
+            border: 1px solid #3d3d6e;
+            color: #e0e0e0;
+            padding: 7px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            outline: none;
+            appearance: none;
+        }
+        .field select:focus,
+        .field input[type="text"]:focus { border-color: #a78bfa; }
+        .field select option { background: #1e1e38; }
+
+        .clip2-field { display: none; }
+        .clip2-field.visible { display: block; }
+
+        .row-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #3d3d6e;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 5px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.82; }
+
+        .btn-delete { background: #dc2626; color: #fff; padding: 5px 10px; }
+        .btn-add    { background: #059669; color: #fff; font-size: 0.9rem; padding: 8px 20px; }
+        .btn-save   { background: #7c3aed; color: #fff; font-size: 0.9rem; padding: 8px 20px; }
+
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        #toast {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            background: #059669;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        #toast.error { background: #dc2626; }
+        #toast.show  { opacity: 1; }
+
+        .hint {
+            font-size: 0.78rem;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 32px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🗂️ TA Model Preset Editor</h1>
+<p class="subtitle">Presets werden in ta_model_presets.json gespeichert · ComfyUI neu starten damit das Dropdown aktualisiert wird</p>
+<p class="subtitle">© 2026, Thomas Möhring (thomo.ART)</p>
+
+<div class="card">
+    <h2>📋 Model Presets</h2>
+    <div id="preset-list"></div>
+    <div class="actions">
+        <button class="btn btn-add" onclick="addPreset()">➕ Preset hinzufügen</button>
+        <button class="btn btn-save" onclick="saveAll()">💾 Speichern</button>
+    </div>
+    <p class="hint">⬆⬇ Presets per Drag &amp; Drop sortieren · Nach dem Speichern ComfyUI neu starten</p>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    let presets    = [];
+    let modelFiles = [];
+    let clipFiles  = [];
+    let vaeFiles   = [];
+    let clipTypes  = ["auto"];
+    let _dragSrc   = null;
+
+    const CLIP_DEVICES = ["default","cpu","gpu"];
+
+    // Typen die Dual-CLIP brauchen
+    const DUAL_CLIP_TYPES = ["flux", "sdxl", "flux2"];
+
+    function needsDualClip(clipType) {
+        return DUAL_CLIP_TYPES.includes((clipType || "").toLowerCase());
+    }
+
+    async function init() {
+        await Promise.all([loadOptions(), loadPresets()]);
+        render();
+    }
+
+    async function loadOptions() {
+        try {
+            const d = await fetch("/ta_model_presets/options").then(r => r.json());
+            modelFiles = d.models     || [];
+            clipFiles  = d.clips      || [];
+            vaeFiles   = d.vaes       || [];
+            clipTypes  = d.clip_types || ["auto"];
+        } catch(e) { console.warn("Optionen nicht geladen:", e); }
+    }
+
+    async function loadPresets() {
+        try {
+            const d = await fetch("/ta_model_presets/list").then(r => r.json());
+            presets = d.presets || [];
+        } catch(e) { showToast("Fehler beim Laden", true); }
+    }
+
+    function render() {
+        const list = document.getElementById("preset-list");
+        if (!presets.length) {
+            list.innerHTML = `<div class="empty">Keine Presets vorhanden. Klicke auf „Preset hinzufügen".</div>`;
+            return;
+        }
+        list.innerHTML = "";
+        presets.forEach((p, i) => list.appendChild(makeRow(p, i)));
+    }
+
+    function clip2Label(clipType) {
+        const t = (clipType || "").toLowerCase();
+        if (t === "flux")  return `CLIP 2 <span style="color:#a78bfa;font-size:0.7rem;">(FLUX: T5-XXL)</span>`;
+        if (t === "sdxl")  return `CLIP 2 <span style="color:#a78bfa;font-size:0.7rem;">(SDXL: clip_g)</span>`;
+        return "CLIP 2";
+    }
+
+    function makeRow(p, i) {
+        const row = document.createElement("div");
+        row.className = "preset-row";
+        row.draggable = true;
+
+        const kind = p.model_file?.startsWith("[G]") ? "GGUF"
+                   : p.model_file?.startsWith("[C]") ? "CKPT"
+                   : p.model_file?.startsWith("[D]") ? "DIFF" : "–";
+
+        const dual = needsDualClip(p.clip_type);
+
+        row.innerHTML = `
+            <div class="row-header" onclick="toggleRow(${i})">
+                <span class="drag-handle" onclick="event.stopPropagation()">⠿</span>
+                <span class="preset-title">${escHtml(p.name || "Unbenannt")}</span>
+                <span class="preset-badge">${kind}</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="row-body">
+                <div class="form-grid">
+                    <div class="field form-full">
+                        <label>Preset Name</label>
+                        <input type="text" value="${escHtml(p.name||'')}"
+                               oninput="update(${i},'name',this.value)"
+                               placeholder="z.B. ZImage BF16">
+                    </div>
+                    <div class="field form-full">
+                        <label>Model File</label>
+                        ${buildSelect("model_file", i, modelFiles, p.model_file||'')}
+                    </div>
+                    <div class="field form-full">
+                        <label>CLIP 1</label>
+                        ${buildSelect("clip_name_1", i, clipFiles, p.clip_name_1 || p.clip_name || '')}
+                    </div>
+                    <div class="field form-full clip2-field${dual ? ' visible' : ''}" id="clip2-${i}">
+                        <label>${clip2Label(p.clip_type)}</label>
+                        ${buildSelect("clip_name_2", i, clipFiles, p.clip_name_2||'')}
+                    </div>
+                    <div class="field">
+                        <label>CLIP Type</label>
+                        ${buildSelectSimple("clip_type", i, clipTypes, p.clip_type||'auto')}
+                    </div>
+                    <div class="field">
+                        <label>CLIP Device</label>
+                        ${buildSelectSimple("clip_device", i, CLIP_DEVICES, p.clip_device||'default')}
+                    </div>
+                    <div class="field form-full">
+                        <label>VAE</label>
+                        ${buildSelect("vae_name", i, vaeFiles, p.vae_name||'')}
+                    </div>
+                    <div class="field">
+                        <label>Weight dtype <span style="color:#a78bfa;font-size:0.7rem;">(nur Diffusion Models)</span></label>
+                        ${buildSelectSimple("weight_dtype", i, ["auto","fp8_e4m3fn","fp8_e5m2"], p.weight_dtype||'auto')}
+                    </div>
+                    <div class="field">
+                        <label>Shift <span style="color:#a78bfa;font-size:0.7rem;">(ModelSamplingAuraFlow – leer = deaktiviert)</span></label>
+                        <input type="text" value="${escHtml(p.shift !== undefined ? String(p.shift) : '')}"
+                               oninput="update(${i},'shift',this.value)"
+                               placeholder="z.B. 3.0 – leer lassen für FLUX/SDXL">
+                    </div>
+                </div>
+                <div class="row-footer">
+                    <button class="btn btn-delete" onclick="removePreset(${i})">🗑️ Entfernen</button>
+                </div>
+            </div>`;
+
+        // Drag & Drop
+        row.addEventListener("dragstart", e => {
+            _dragSrc = i;
+            e.dataTransfer.effectAllowed = "move";
+            setTimeout(() => row.classList.add("dragging"), 0);
+        });
+        row.addEventListener("dragend",  () => row.classList.remove("dragging"));
+        row.addEventListener("dragover", e => { e.preventDefault(); row.classList.add("drag-over"); });
+        row.addEventListener("dragleave",() => row.classList.remove("drag-over"));
+        row.addEventListener("drop", e => {
+            e.preventDefault();
+            row.classList.remove("drag-over");
+            if (_dragSrc !== null && _dragSrc !== i) {
+                const moved = presets.splice(_dragSrc, 1)[0];
+                presets.splice(i, 0, moved);
+                render();
+            }
+        });
+
+        return row;
+    }
+
+    function buildSelect(field, idx, options, current) {
+        if (!options.length) {
+            return `<input type="text" value="${escHtml(current)}"
+                           oninput="update(${idx},'${field}',this.value)"
+                           placeholder="Dateiname eingeben">`;
+        }
+        const hasMatch = options.includes(current);
+        let html = `<select onchange="update(${idx},'${field}',this.value)">`;
+        if (!current) {
+            html += `<option value="">– auswählen –</option>`;
+        } else if (!hasMatch) {
+            html += `<option value="${escHtml(current)}" selected>${escHtml(current)}</option>`;
+            html += `<option disabled>──────────</option>`;
+        }
+        options.forEach(o => {
+            html += `<option value="${escHtml(o)}" ${o===current?'selected':''}>${escHtml(o)}</option>`;
+        });
+        return html + `</select>`;
+    }
+
+    function buildSelectSimple(field, idx, options, current) {
+        const isClipType = field === "clip_type";
+        const handler = isClipType
+            ? `onClipTypeChange(${idx},this.value)`
+            : `update(${idx},'${field}',this.value)`;
+        let html = `<select onchange="${handler}">`;
+        options.forEach(o => {
+            html += `<option value="${o}" ${o===current?'selected':''}>${o}</option>`;
+        });
+        return html + `</select>`;
+    }
+
+    function onClipTypeChange(i, value) {
+        update(i, 'clip_type', value);
+        const clip2 = document.getElementById(`clip2-${i}`);
+        if (clip2) {
+            const dual = needsDualClip(value);
+            clip2.classList.toggle("visible", dual);
+            // Label aktualisieren
+            const label = clip2.querySelector("label");
+            if (label) label.innerHTML = clip2Label(value);
+        }
+    }
+
+    function toggleRow(i) {
+        document.querySelectorAll(".preset-row")[i].classList.toggle("open");
+    }
+
+    function update(i, field, value) {
+        presets[i][field] = value;
+        const rows = document.querySelectorAll(".preset-row");
+        if (field === "name") {
+            const el = rows[i].querySelector(".preset-title");
+            if (el) el.textContent = value || "Unbenannt";
+        }
+        if (field === "model_file") {
+            const badge = rows[i].querySelector(".preset-badge");
+            if (badge) badge.textContent = value.startsWith("[G]") ? "GGUF"
+                                         : value.startsWith("[C]") ? "CKPT"
+                                         : value.startsWith("[D]") ? "DIFF" : "–";
+        }
+    }
+
+    function addPreset() {
+        presets.push({
+            name: `Preset ${presets.length + 1}`,
+            model_file: "", clip_name_1: "", clip_name_2: "",
+            clip_type: "auto", clip_device: "default", vae_name: "",
+            weight_dtype: "auto", shift: ""
+        });
+        render();
+        setTimeout(() => {
+            const rows = document.querySelectorAll(".preset-row");
+            if (rows.length) {
+                rows[rows.length-1].classList.add("open");
+                rows[rows.length-1].scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }, 50);
+    }
+
+    function removePreset(i) {
+        if (!confirm(`Preset "${presets[i].name}" wirklich entfernen?`)) return;
+        presets.splice(i, 1);
+        render();
+    }
+
+    async function saveAll() {
+        const res = await fetch("/ta_model_presets/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ presets })
+        }).then(r => r.json());
+
+        if (res.ok) showToast("✅ Gespeichert! Bitte ComfyUI neu starten.");
+        else        showToast(`❌ Fehler: ${res.error}`, true);
+    }
+
+    function showToast(msg, isError = false) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "show" + (isError ? " error" : "");
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.className = "", 3000);
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+            .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    init();
+</script>
+</body>
+</html>

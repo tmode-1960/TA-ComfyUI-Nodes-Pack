@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA Sampler Preset Editor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: #a78bfa;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+        }
+
+        /* ── Tabelle ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin-bottom: 32px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: #2d2d4e;
+            color: #a78bfa;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 2px solid #3d3d6e;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 9px 14px;
+            border-bottom: 1px solid #2a2a4a;
+            vertical-align: middle;
+        }
+
+        tr:hover td { background: #22223a; }
+
+        td input[type="number"],
+        td input[type="text"] {
+            background: #16162a;
+            border: 1px solid #3d3d6e;
+            color: #e0e0e0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 0.85rem;
+        }
+
+        td input:focus {
+            outline: none;
+            border-color: #a78bfa;
+        }
+
+        .col-drag  { width: 36px; text-align: center; padding: 0 4px; }
+        .col-name  { min-width: 140px; }
+        .col-num   { width: 100px; }
+        .col-str   { min-width: 130px; }
+        .col-act   { width: 120px; text-align: center; }
+
+        /* ── Drag & Drop ── */
+        .drag-handle {
+            cursor: grab;
+            color: #555;
+            font-size: 1.2rem;
+            user-select: none;
+            display: block;
+            text-align: center;
+        }
+        .drag-handle:active { cursor: grabbing; }
+
+        tr.drag-over td { background: #2d2d5e !important; outline: 2px dashed #a78bfa; outline-offset: -2px; }
+        tr.dragging    { opacity: 0.4; }
+
+        /* ── Buttons ── */
+        .btn {
+            border: none;
+            border-radius: 5px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.82; }
+
+        .btn-save   { background: #7c3aed; color: #fff; }
+        .btn-delete { background: #dc2626; color: #fff; }
+        .btn-add    { background: #059669; color: #fff; font-size: 0.9rem; padding: 8px 20px; }
+        .btn-reload { background: #2563eb; color: #fff; font-size: 0.9rem; padding: 8px 20px; }
+
+        /* ── Neues Preset ── */
+        .new-preset {
+            background: #1e1e38;
+            border: 1px solid #3d3d6e;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        .new-preset h2 {
+            font-size: 1rem;
+            color: #a78bfa;
+            margin-bottom: 16px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 0.78rem;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .form-field input {
+            background: #16162a;
+            border: 1px solid #3d3d6e;
+            color: #e0e0e0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 0.88rem;
+        }
+
+        .form-field input:focus {
+            outline: none;
+            border-color: #a78bfa;
+        }
+
+        .form-actions { display: flex; gap: 10px; align-items: center; }
+
+        /* ── Status Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            background: #059669;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            max-width: 340px;
+        }
+        #toast.error { background: #dc2626; }
+        #toast.show  { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<h1>🎛️ TA Sampler Preset Editor</h1>
+<p class="subtitle">Presets werden in ta_sampler_presets.json gespeichert · Änderungen gelten beim nächsten ComfyUI-Run sofort</p>
+<p class="subtitle">© 2026, Thomas Möhring (thomo.ART)</p>
+
+<!-- Preset-Tabelle -->
+<div class="table-wrap">
+    <table id="preset-table">
+        <thead>
+            <tr>
+                <th class="col-drag"></th>
+                <th class="col-name">Name</th>
+                <th class="col-num">Steps</th>
+                <th class="col-num">CFG</th>
+                <th class="col-num">Start</th>
+                <th class="col-num">End</th>
+                <th class="col-str">Sampler</th>
+                <th class="col-str">Scheduler</th>
+                <th class="col-act">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody id="preset-tbody">
+            <tr><td colspan="9" style="text-align:center;color:#666;padding:20px;">Lade Presets…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Neues Preset anlegen -->
+<div class="new-preset">
+    <h2>➕ Neues Preset anlegen</h2>
+    <div class="form-grid">
+        <div class="form-field">
+            <label>Name</label>
+            <input type="text" id="new-name" placeholder="z.B. FLUX Schnell">
+        </div>
+        <div class="form-field">
+            <label>Steps</label>
+            <input type="number" id="new-steps" value="20" min="1" max="200">
+        </div>
+        <div class="form-field">
+            <label>CFG</label>
+            <input type="number" id="new-cfg" value="7.0" min="0" max="30" step="0.1">
+        </div>
+        <div class="form-field">
+            <label>Start At Step</label>
+            <input type="number" id="new-start" value="0" min="0" max="200">
+        </div>
+        <div class="form-field">
+            <label>End At Step</label>
+            <input type="number" id="new-end" value="9999" min="0" max="99999">
+        </div>
+        <div class="form-field">
+            <label>Sampler Name</label>
+            <select id="new-sampler"></select>
+        </div>
+        <div class="form-field">
+            <label>Scheduler</label>
+            <select id="new-scheduler"></select>
+        </div>
+    </div>
+    <div class="form-actions">
+        <button class="btn btn-add" onclick="addPreset()">✅ Preset anlegen</button>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    const API = {
+        list:    () => fetch("/ta_sampler_presets/list").then(r => r.json()),
+        save:    (name, data) => fetch("/ta_sampler_presets/save", {
+                     method: "POST",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ name, data })
+                 }).then(r => r.json()),
+        delete:  (name) => fetch("/ta_sampler_presets/delete", {
+                     method: "POST",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ name })
+                 }).then(r => r.json()),
+        reorder: (order) => fetch("/ta_sampler_presets/reorder", {
+                     method: "POST",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ order })
+                 }).then(r => r.json()),
+    };
+
+    // ── Drag & Drop State ─────────────────────────────────────────────────
+    let _dragSrc = null;
+
+    // ── Toast ──────────────────────────────────────────────────────────────
+    function showToast(msg, isError = false) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "show" + (isError ? " error" : "");
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.className = "", 3000);
+    }
+
+    // ── Tabelle rendern ────────────────────────────────────────────────────
+    async function loadPresets() {
+        const presets = await API.list();
+        const tbody   = document.getElementById("preset-tbody");
+        tbody.innerHTML = "";
+
+        if (!presets || Object.keys(presets).length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#666;padding:20px;">Keine Presets vorhanden.</td></tr>';
+            return;
+        }
+
+        for (const [name, p] of Object.entries(presets)) {
+            const tr = document.createElement("tr");
+            tr.dataset.name = name;
+            tr.draggable = true;
+            tr.innerHTML = `
+                <td class="col-drag"><span class="drag-handle" title="Verschieben">⠿</span></td>
+                <td class="col-name"><strong>${escHtml(name)}</strong></td>
+                <td class="col-num"><input type="number" value="${p.steps}" min="1" max="200" data-field="steps"></td>
+                <td class="col-num"><input type="number" value="${p.cfg}" min="0" max="30" step="0.1" data-field="cfg"></td>
+                <td class="col-num"><input type="number" value="${p.start_at_step}" min="0" max="200" data-field="start_at_step"></td>
+                <td class="col-num"><input type="number" value="${p.end_at_step}" min="0" max="99999" data-field="end_at_step"></td>
+                <td class="col-str">${makeSelect(p.sampler_name, window._samplers, "sampler_name")}</td>
+                <td class="col-str">${makeSelect(p.scheduler, window._schedulers, "scheduler")}</td>
+                <td class="col-act">
+                    <button class="btn btn-save" onclick="savePreset(this)">💾 Speichern</button>
+                    <br><br>
+                    <button class="btn btn-delete" onclick="deletePreset(this)">🗑️ Löschen</button>
+                </td>
+            `;
+
+            // ── Drag Events ──
+            tr.addEventListener("dragstart", e => {
+                _dragSrc = tr;
+                e.dataTransfer.effectAllowed = "move";
+                setTimeout(() => tr.classList.add("dragging"), 0);
+            });
+            tr.addEventListener("dragend", () => {
+                tr.classList.remove("dragging");
+                document.querySelectorAll("#preset-tbody tr").forEach(r => r.classList.remove("drag-over"));
+            });
+            tr.addEventListener("dragover", e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (_dragSrc && _dragSrc !== tr) {
+                    document.querySelectorAll("#preset-tbody tr").forEach(r => r.classList.remove("drag-over"));
+                    tr.classList.add("drag-over");
+                }
+            });
+            tr.addEventListener("dragleave", () => tr.classList.remove("drag-over"));
+            tr.addEventListener("drop", async e => {
+                e.preventDefault();
+                tr.classList.remove("drag-over");
+                if (!_dragSrc || _dragSrc === tr) return;
+
+                const rows    = [...document.querySelectorAll("#preset-tbody tr")];
+                const srcIdx  = rows.indexOf(_dragSrc);
+                const destIdx = rows.indexOf(tr);
+                if (srcIdx < destIdx) tr.after(_dragSrc);
+                else                  tr.before(_dragSrc);
+
+                // Neue Reihenfolge an Backend senden
+                const order = [...document.querySelectorAll("#preset-tbody tr[data-name]")]
+                    .map(r => r.dataset.name);
+                const res = await API.reorder(order);
+                if (res.ok) showToast("↕️ Reihenfolge gespeichert.");
+                else        showToast(`❌ Fehler: ${res.error}`, true);
+            });
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    // ── Preset speichern ───────────────────────────────────────────────────
+    async function savePreset(btn) {
+        const tr   = btn.closest("tr");
+        const name = tr.dataset.name;
+        const data = {};
+        tr.querySelectorAll("[data-field]").forEach(el => {
+            const f = el.dataset.field;
+            data[f] = (f === "steps" || f === "start_at_step" || f === "end_at_step")
+                ? parseInt(el.value)
+                : f === "cfg"
+                    ? parseFloat(el.value)
+                    : el.value.trim();
+        });
+        const res = await API.save(name, data);
+        if (res.ok) showToast(`✅ Preset '${name}' gespeichert.`);
+        else        showToast(`❌ Fehler: ${res.error}`, true);
+    }
+
+    // ── Preset löschen ─────────────────────────────────────────────────────
+    async function deletePreset(btn) {
+        const tr   = btn.closest("tr");
+        const name = tr.dataset.name;
+        if (!confirm(`Preset '${name}' wirklich löschen?`)) return;
+        const res = await API.delete(name);
+        if (res.ok) { showToast(`🗑️ Preset '${name}' gelöscht.`); await loadPresets(); }
+        else        showToast(`❌ Fehler: ${res.error}`, true);
+    }
+
+    // ── Neues Preset anlegen ───────────────────────────────────────────────
+    async function addPreset() {
+        const name = document.getElementById("new-name").value.trim();
+        if (!name) { showToast("⚠️ Bitte einen Namen eingeben.", true); return; }
+
+        const data = {
+            steps:         parseInt(document.getElementById("new-steps").value),
+            cfg:           parseFloat(document.getElementById("new-cfg").value),
+            start_at_step: parseInt(document.getElementById("new-start").value),
+            end_at_step:   parseInt(document.getElementById("new-end").value),
+            sampler_name:  document.getElementById("new-sampler").value,
+            scheduler:     document.getElementById("new-scheduler").value,
+        };
+
+        const res = await API.save(name, data);
+        if (res.ok) {
+            showToast(`✅ Preset '${name}' angelegt.`);
+            document.getElementById("new-name").value = "";
+            await loadPresets();
+        } else {
+            showToast(`❌ Fehler: ${res.error}`, true);
+        }
+    }
+
+    // ── Select-HTML erzeugen ───────────────────────────────────────────────
+    function makeSelect(selected, options, field) {
+        const opts = options.map(o =>
+            `<option value="${escHtml(o)}"${o === selected ? " selected" : ""}>${escHtml(o)}</option>`
+        ).join("");
+        return `<select data-field="${field}" style="background:#16162a;border:1px solid #3d3d6e;color:#e0e0e0;padding:4px 6px;border-radius:4px;width:100%;font-size:0.85rem;">${opts}</select>`;
+    }
+
+    // ── Dropdowns für neues Preset befüllen ───────────────────────────────
+    function fillNewPresetDropdowns() {
+        const samplerSel   = document.getElementById("new-sampler");
+        const schedulerSel = document.getElementById("new-scheduler");
+
+        window._samplers.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s; opt.textContent = s;
+            if (s === "euler") opt.selected = true;
+            samplerSel.appendChild(opt);
+        });
+
+        window._schedulers.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s; opt.textContent = s;
+            if (s === "normal") opt.selected = true;
+            schedulerSel.appendChild(opt);
+        });
+
+        // Style
+        [samplerSel, schedulerSel].forEach(el => {
+            el.style.cssText = "background:#16162a;border:1px solid #3d3d6e;color:#e0e0e0;padding:6px 8px;border-radius:4px;width:100%;font-size:0.88rem;";
+        });
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+            .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────
+    async function init() {
+        // Sampler + Scheduler laden
+        const opts = await fetch("/ta_sampler_presets/options").then(r => r.json());
+        window._samplers   = opts.samplers   || [];
+        window._schedulers = opts.schedulers || [];
+
+        fillNewPresetDropdowns();
+        await loadPresets();
+    }
+
+    init();
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA Nodes Pack – Wiki</title>
+    <script src="/extensions/TA-ComfyUI-Nodes-Pack/marked.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── Header ── */
+        #header {
+            background: #16213e;
+            border-bottom: 1px solid #2a3a5e;
+            padding: 14px 40px 12px 40px;
+        }
+
+        #header .title {
+            font-size: 1.25em;
+            font-weight: 700;
+            color: #e0e0e0;
+            margin-bottom: 3px;
+        }
+
+        #header .subtitle {
+            font-size: 0.82em;
+            color: #7a8aaa;
+        }
+
+        #header .subtitle span {
+            margin: 0 6px;
+            opacity: 0.4;
+        }
+
+        #header .copyright {
+            font-size: 0.78em;
+            color: #555e7a;
+            margin-top: 4px;
+        }
+
+        /* ── Content ── */
+        #content {
+            padding: 36px 40px;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        #content h1 {
+            color: #5a9bf5;
+            font-size: 1.9em;
+            margin-bottom: 0.4em;
+            border-bottom: 2px solid #2a5db0;
+            padding-bottom: 0.3em;
+        }
+
+        #content h2 {
+            color: #7ab3f7;
+            font-size: 1.4em;
+            margin-top: 1.6em;
+            margin-bottom: 0.4em;
+            border-bottom: 1px solid #2a3a5e;
+            padding-bottom: 0.2em;
+        }
+
+        #content h3 {
+            color: #a0c4ff;
+            font-size: 1.1em;
+            margin-top: 1.2em;
+            margin-bottom: 0.3em;
+        }
+
+        #content p {
+            margin-bottom: 0.9em;
+        }
+
+        #content ul, #content ol {
+            margin: 0.5em 0 0.9em 1.6em;
+        }
+
+        #content li {
+            margin-bottom: 0.3em;
+        }
+
+        #content code {
+            background: #0d1b2a;
+            color: #7dd3fc;
+            padding: 0.15em 0.45em;
+            border-radius: 4px;
+            font-family: "Cascadia Code", "Consolas", monospace;
+            font-size: 0.9em;
+        }
+
+        #content pre {
+            background: #0d1b2a;
+            border: 1px solid #2a3a5e;
+            border-radius: 6px;
+            padding: 1em;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+
+        #content pre code {
+            background: none;
+            padding: 0;
+            color: #a5d6f8;
+        }
+
+        #content blockquote {
+            border-left: 4px solid #2a5db0;
+            padding-left: 1em;
+            color: #a0a0b0;
+            margin: 0.8em 0;
+        }
+
+        #content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+
+        #content th {
+            background: #2a5db0;
+            color: #fff;
+            padding: 0.5em 0.8em;
+            text-align: left;
+        }
+
+        #content td {
+            border: 1px solid #2a3a5e;
+            padding: 0.45em 0.8em;
+        }
+
+        #content tr:nth-child(even) td {
+            background: #1e2a40;
+        }
+
+        #content a {
+            color: #5a9bf5;
+            text-decoration: none;
+        }
+
+        #content a:hover {
+            text-decoration: underline;
+        }
+
+        #content hr {
+            border: none;
+            border-top: 1px solid #2a3a5e;
+            margin: 1.5em 0;
+        }
+
+        #error {
+            display: none;
+            color: #f87171;
+            background: #2a1a1a;
+            border: 1px solid #7f1d1d;
+            border-radius: 6px;
+            padding: 1em;
+            margin: 1em 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <div class="title">📖 TA Nodes Pack – Dokumentation</div>
+        <div class="subtitle">
+            Wiki für alle Nodes des TA-ComfyUI-Nodes-Pack
+            <span>·</span>
+            Markdown-Dateien in <code>web/wiki/</code>
+        </div>
+        <div class="copyright">© 2026, Thomas Möhring (thomo.ART)</div>
+    </div>
+
+    <div id="error"></div>
+    <div id="content"></div>
+
+    <script>
+        const params = new URLSearchParams(location.search);
+        const page   = params.get("page") || "help.md";
+
+        if (!/^[\w\-]+\.md$/i.test(page)) {
+            document.getElementById("error").style.display = "block";
+            document.getElementById("error").textContent   = "Ungültiger Seitenname.";
+        } else {
+            fetch(`/ta-nodes/wiki/${page}?v=${Date.now()}`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.text();
+                })
+                .then(md => renderChunked(md))
+                .catch(err => {
+                    const el = document.getElementById("error");
+                    el.style.display = "block";
+                    el.textContent   = `Fehler beim Laden von "${page}": ${err.message}`;
+                });
+        }
+
+        // Split markdown on top-level section boundaries (--- separator lines),
+        // render each chunk in a separate requestAnimationFrame so the browser
+        // stays responsive and doesn't drop list items on large documents.
+        function renderChunked(md) {
+            const content = document.getElementById("content");
+            content.innerHTML = "";
+
+            // Split on lines that are exactly "---" (our section separators).
+            // Keep the separator so marked renders the <hr> correctly.
+            // Split only on double-separator lines ("---\n---") which are
+            // our explicit section boundaries, never inside tables/code.
+            const chunks = md.split(/(?=^---\n---$)/m);
+
+            let i = 0;
+            function renderNext() {
+                if (i >= chunks.length) {
+                    // After all chunks are rendered, fix anchor links so
+                    // clicking a TOC entry scrolls to the right section.
+                    fixAnchors();
+                    return;
+                }
+                const div = document.createElement("div");
+                div.innerHTML = marked.parse(chunks[i]);
+                content.appendChild(div);
+                i++;
+                requestAnimationFrame(renderNext);
+            }
+            requestAnimationFrame(renderNext);
+        }
+
+        // marked.js generates anchors from heading text (slugified).
+        // Our headings contain <a id="..."> tags which marked wraps inside
+        // the heading, so the id ends up on the inner <a> not the heading.
+        // This function hoists every id from an inner <a> up to its parent
+        // heading element so that in-page hash navigation works correctly.
+        function fixAnchors() {
+            document.querySelectorAll("h1 a[id], h2 a[id], h3 a[id]").forEach(a => {
+                const heading = a.closest("h1, h2, h3");
+                if (heading && !heading.id) {
+                    heading.id = a.id;
+                }
+            });
+            // If the URL already has a hash, scroll to it now that IDs are set.
+            if (location.hash) {
+                const target = document.getElementById(location.hash.slice(1));
+                if (target) target.scrollIntoView();
+            }
+        }
+    </script>
+</body>
+</html>

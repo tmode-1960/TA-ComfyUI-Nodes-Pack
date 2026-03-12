@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA Model Choices Editor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: #a78bfa;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: #1e1e38;
+            border: 1px solid #3d3d6e;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            max-width: 540px;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            color: #a78bfa;
+            margin-bottom: 16px;
+        }
+
+        /* ── Liste ── */
+        #choices-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .choice-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .choice-row input {
+            flex: 1;
+            background: #16162a;
+            border: 1px solid #3d3d6e;
+            color: #e0e0e0;
+            padding: 7px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .choice-row input:focus {
+            outline: none;
+            border-color: #a78bfa;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #555;
+            font-size: 1.1rem;
+            padding: 0 4px;
+            user-select: none;
+        }
+        .drag-handle:active { cursor: grabbing; }
+
+        /* ── Buttons ── */
+        .btn {
+            border: none;
+            border-radius: 5px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.82; }
+
+        .btn-delete  { background: #dc2626; color: #fff; padding: 5px 10px; }
+        .btn-add     { background: #059669; color: #fff; font-size: 0.9rem; padding: 8px 20px; }
+        .btn-save    { background: #7c3aed; color: #fff; font-size: 0.9rem; padding: 8px 20px; }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            background: #059669;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        #toast.error { background: #dc2626; }
+        #toast.show  { opacity: 1; }
+
+        .hint {
+            font-size: 0.78rem;
+            color: #555;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🔀 TA Model Choices Editor</h1>
+<p class="subtitle">Einträge werden in ta_model_choices.json gespeichert · ComfyUI neu starten damit das Dropdown aktualisiert wird</p>
+<p class="subtitle">© 2026, Thomas Möhring (thomo.ART)</p>
+
+<div class="card">
+    <h2>📋 Model Choices</h2>
+    <div id="choices-list"></div>
+    <div class="actions">
+        <button class="btn btn-add" onclick="addChoice()">➕ Eintrag hinzufügen</button>
+        <button class="btn btn-save" onclick="saveChoices()">💾 Speichern</button>
+    </div>
+    <p class="hint">⬆⬇ Einträge per Drag &amp; Drop sortieren · Nach dem Speichern ComfyUI neu starten</p>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    let _dragSrc = null;
+
+    // ── Toast ──────────────────────────────────────────────────────────────
+    function showToast(msg, isError = false) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "show" + (isError ? " error" : "");
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.className = "", 3000);
+    }
+
+    // ── Zeile erzeugen ─────────────────────────────────────────────────────
+    function makeRow(value = "") {
+        const row = document.createElement("div");
+        row.className = "choice-row";
+        row.draggable = true;
+        row.innerHTML = `
+            <span class="drag-handle" title="Verschieben">⠿</span>
+            <input type="text" value="${escHtml(value)}" placeholder="z.B. FLUX Diffusion">
+            <button class="btn btn-delete" onclick="this.closest('.choice-row').remove()">🗑️</button>
+        `;
+
+        // Drag & Drop
+        row.addEventListener("dragstart", e => {
+            _dragSrc = row;
+            e.dataTransfer.effectAllowed = "move";
+            setTimeout(() => row.style.opacity = "0.4", 0);
+        });
+        row.addEventListener("dragend", () => row.style.opacity = "1");
+        row.addEventListener("dragover", e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; });
+        row.addEventListener("drop", e => {
+            e.preventDefault();
+            if (_dragSrc && _dragSrc !== row) {
+                const list = document.getElementById("choices-list");
+                const rows = [...list.children];
+                const srcIdx  = rows.indexOf(_dragSrc);
+                const destIdx = rows.indexOf(row);
+                if (srcIdx < destIdx) row.after(_dragSrc);
+                else row.before(_dragSrc);
+            }
+        });
+
+        return row;
+    }
+
+    // ── Eintrag hinzufügen ─────────────────────────────────────────────────
+    function addChoice() {
+        document.getElementById("choices-list").appendChild(makeRow());
+    }
+
+    // ── Liste laden ────────────────────────────────────────────────────────
+    async function loadChoices() {
+        const res     = await fetch("/ta_model_choices/list").then(r => r.json());
+        const list    = document.getElementById("choices-list");
+        list.innerHTML = "";
+        (res.choices || []).forEach(c => list.appendChild(makeRow(c)));
+    }
+
+    // ── Speichern ──────────────────────────────────────────────────────────
+    async function saveChoices() {
+        const inputs  = document.querySelectorAll("#choices-list .choice-row input");
+        const choices = [...inputs].map(i => i.value.trim()).filter(Boolean);
+
+        if (choices.length === 0) {
+            showToast("⚠️ Mindestens ein Eintrag wird benötigt.", true);
+            return;
+        }
+
+        const res = await fetch("/ta_model_choices/save", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ choices }),
+        }).then(r => r.json());
+
+        if (res.ok) showToast("✅ Gespeichert! Bitte ComfyUI neu starten.");
+        else        showToast(`❌ Fehler: ${res.error}`, true);
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+            .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    loadChoices();
+</script>
+</body>
+</html>

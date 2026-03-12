@@ -1,0 +1,357 @@
+"""
+================================================================================
+Node Name   : TA Smart LLM
+Created     : 2025
+Modified    : 2026-03-12
+Copyright   : © 2026, Thomas Möhrling (thomo.ART)
+Version     : 2.1
+--------------------------------------------------------------------------------
+Part of ComfyUI-TA-Nodes-Pack
+License     : Apache 2.0
+
+
+Description:
+    Smart LLM integration for LM Studio and Ollama backends with VRAM management.
+    Auto-detects vision models (tags with [Vision]), supports image input for
+    multimodal prompts, optional pre/post model unloading, and model caching.
+    Returns generated prompt text and execution status.
+================================================================================
+"""
+
+import requests
+import torch
+import base64
+import json
+import os
+import subprocess
+from io import BytesIO
+from PIL import Image
+import time
+
+CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ta_smart_llm_models.json")
+
+# Keywords for automatic vision model detection (lowercase)
+VISION_KEYWORDS = ["llava", "vision", "-vl-", "_vl_", "vl-", "vl_", "moondream", "minicpm-v", "internvl", "qwen-vl"]
+
+# Manual additions (exact model names without backend prefix, lowercase)
+# Example: VISION_MANUAL = {"my-vision-model-7b", "another-model-13b"}
+VISION_MANUAL = set()
+
+
+def is_vision_model(model_id: str) -> bool:
+    lower = model_id.lower()
+    if any(kw in lower for kw in VISION_KEYWORDS):
+        return True
+    if lower in VISION_MANUAL:
+        return True
+    return False
+
+
+def tag_model(full_name: str) -> str:
+    """
+    Adds [Vision] suffix if the model supports image input.
+    """
+    model_id = '/'.join(full_name.split('/')[1:])
+    if is_vision_model(model_id):
+        return f"{full_name} [Vision]"
+    return full_name
+
+
+def strip_vision_tag(model: str) -> str:
+    """
+    Removes [Vision] tag for the API request.
+    """
+    return model.replace(" [Vision]", "")
+
+
+class TASmartLLM:
+    """
+    ComfyUI node for LLM prompt generation via LM Studio or Ollama.
+    
+    Features:
+    - Auto-discovery and caching of available models from both backends
+    - Automatic vision model detection and image support
+    - Optional VRAM cleanup before LLM inference (unloads ComfyUI image models)
+    - Optional LLM unloading after generation to free GPU memory
+    - Retry logic for transient API errors
+    - Status feedback for workflow debugging
+    """
+
+    @classmethod
+    def _load_cached_models(cls):
+        try:
+            with open(CACHE_FILE, "r") as f:
+                return set(json.load(f))
+        except:
+            return set()
+
+    @classmethod
+    def _save_cached_models(cls, models):
+        try:
+            with open(CACHE_FILE, "w") as f:
+                json.dump(sorted(models), f)
+        except:
+            pass
+
+    @classmethod
+    def get_models(cls):
+        """
+        Discovers and caches available models from LM Studio (port 1234) and
+        Ollama (port 11434). Tags vision-capable models with [Vision] suffix.
+        """
+        known = cls._load_cached_models()
+
+        current = []
+        try:
+            r = requests.get("http://127.0.0.1:1234/v1/models", timeout=2)
+            if r.status_code == 200:
+                for m in r.json()['data']:
+                    current.append(f"LMStudio/{m['id']}")
+        except:
+            pass
+        try:
+            r = requests.get("http://127.0.0.1:11434/api/tags", timeout=2)
+            if r.status_code == 200:
+                for m in r.json()['models']:
+                    current.append(f"Ollama/{m['name']}")
+        except:
+            pass
+
+        all_models = known | set(current)
+        if current:
+            cls._save_cached_models(all_models)
+
+        tagged = [tag_model(m) for m in sorted(all_models)]
+        return tagged if tagged else ["No Backend"]
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        """
+        Defines all input widgets shown in the ComfyUI node UI.
+
+        Required Inputs:
+        llm_enable: Master toggle to enable/disable the entire node.
+        model: Dropdown of discovered models (LMStudio/Ollama, vision-tagged).
+        user_prompt: Main user input prompt (multiline).
+        system_prompt: System instruction for the LLM.
+        unload_image_models_first: Unload ComfyUI image models before inference.
+        unload_llm_after: Unload LLM model from backend after generation.
+
+        Optional Inputs:
+        image: IMAGE tensor for vision models (auto-detected).
+
+        Returns:
+        dict: ComfyUI INPUT_TYPES dictionary.
+        """
+        models = cls.get_models()
+        return {
+            "required": {
+                "llm_enable": ("BOOLEAN", {"default": True, "label_on": "✅ LLM ON", "label_off": "❌ OFF"}),
+                "model": (models, {"default": models[0] if models else "No Backend"}),
+                "user_prompt": ("STRING", {"multiline": True, "default": ""}),
+                "system_prompt": ("STRING", {"multiline": True, "default": "You are an expert SD prompt generator."}),
+                "unload_image_models_first": ("BOOLEAN", {"default": False}),
+                "unload_llm_after": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "image": ("IMAGE",)
+            }
+        }
+
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("prompt", "status")
+    FUNCTION = "generate"
+    CATEGORY = "TA Tools"
+
+    @classmethod
+    def IS_CHANGED(cls, *args, **kwargs):
+        return time.time()
+
+    def _backend_reachable(self, backend, port):
+        """
+        Checks if LM Studio or Ollama backend is responding.
+        """
+        try:
+            url = f"http://127.0.0.1:{port}/v1/models" if "LMStudio" in backend else f"http://127.0.0.1:{port}/api/tags"
+            return requests.get(url, timeout=2).status_code == 200
+        except:
+            return False
+
+    def _unload_comfyui_models(self):
+        """
+        Unloads all ComfyUI image models from VRAM to free GPU memory.
+        """
+        try:
+            import comfy.model_management as mm
+            mm.unload_all_models()
+            mm.soft_empty_cache()
+        except Exception as e:
+            print(f"[TA Smart LLM] Warning: Could not unload image models: {e}")
+
+    def _unload_lmstudio_llm(self):
+        """
+        Unloads the active LM Studio model via lms CLI tool.
+        """
+        try:
+            subprocess.run(["lms", "unload", "--all"], timeout=15, capture_output=True)
+            print(f"[TA Smart LLM] LM Studio model unloaded successfully.")
+        except Exception as e:
+            print(f"[TA Smart LLM] Warning: Could not unload LM Studio model: {e}")
+
+    def _unload_ollama_llm(self, model_name):
+        """
+        Unloads an Ollama model by calling it with keep_alive=0.
+        """
+        try:
+            requests.post("http://127.0.0.1:11434/api/generate", json={
+                "model": model_name,
+                "keep_alive": 0
+            }, timeout=10)
+            print(f"[TA Smart LLM] Ollama model unloaded successfully: {model_name}")
+        except Exception as e:
+            print(f"[TA Smart LLM] Warning: Could not unload Ollama model: {e}")
+
+    def _build_image_b64(self, image):
+        """
+        Converts IMAGE tensor to base64 PNG for vision model input.
+        """
+        img_array = (255 * image[0].cpu().numpy()).astype('uint8')
+        img = Image.fromarray(img_array)
+        buffer = BytesIO()
+        img.save(buffer, 'PNG')
+        return base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+    def _flush_lmstudio_context(self, url, model_name):
+        """
+        Sends a minimal request to clear LM Studio chat context.
+        """
+        try:
+            requests.post(url, json={
+                "model": model_name,
+                "messages": [{"role": "user", "content": "."}],
+                "max_tokens": 1
+            }, timeout=10)
+        except:
+            pass
+        time.sleep(0.5)
+
+    def _post_with_retry(self, url, payload, is_lmstudio, max_retries=3, retry_delay=1.5):
+        """
+        Posts to LLM API with retry logic for transient errors.
+        """
+        last_error = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                r = requests.post(url, json=payload, timeout=120)
+                r.raise_for_status()
+                return r.json()['choices'][0]['message']['content'] if is_lmstudio else r.json()['response']
+            except requests.exceptions.HTTPError as e:
+                last_error = e
+                if e.response is not None and e.response.status_code in (400, 500, 502, 503) and attempt < max_retries:
+                    time.sleep(retry_delay)
+                    continue
+                raise
+            except requests.exceptions.RequestException as e:
+                last_error = e
+                if attempt < max_retries:
+                    time.sleep(retry_delay)
+                    continue
+                raise
+        raise last_error
+
+    def generate(self, llm_enable, model, user_prompt, system_prompt,
+                 unload_image_models_first=False, unload_llm_after=False,
+                 image=None):
+        """
+        Main generation method. Queries the selected LLM and returns prompt + status.
+
+        Workflow:
+        1. Skip if disabled or backend unreachable.
+        2. Optionally unload ComfyUI models for VRAM.
+        3. Build payload (text + optional image b64).
+        4. Send request to LM Studio/Ollama with retries.
+        5. Optionally unload LLM model after.
+        
+        Args:
+        llm_enable (bool): Master enable toggle.
+        model (str): Selected model (tagged).
+        user_prompt (str): User input.
+        system_prompt (str): System instruction.
+        unload_image_models_first (bool): Free VRAM before.
+        unload_llm_after (bool): Free VRAM after.
+        image: Optional IMAGE for vision models.
+
+        Returns:
+        tuple: (generated_prompt: str, status: str)
+        """
+        if not llm_enable:
+            return ("", "DISABLED")
+
+        clean_model = strip_vision_tag(model)
+        backend = clean_model.split('/')[0]
+        model_name = '/'.join(clean_model.split('/')[1:])
+        port = 1234 if "LMStudio" in backend else 11434
+
+        if not self._backend_reachable(backend, port):
+            return ("", f"SKIPPED - {backend} not reachable")
+
+        print(f"[TA Smart LLM] Loading model: {clean_model}")
+
+        # Unload ComfyUI image models before LLM request
+        if unload_image_models_first:
+            self._unload_comfyui_models()
+
+        full_prompt = user_prompt.strip()
+
+        img_b64 = self._build_image_b64(image) if image is not None else None
+
+        try:
+            if "LMStudio" in backend:
+                url = f"http://127.0.0.1:{port}/v1/chat/completions"
+                if img_b64:
+                    self._flush_lmstudio_context(url, model_name)
+                    user_content = [
+                        {"type": "text", "text": full_prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}}
+                    ]
+                else:
+                    user_content = full_prompt
+                payload = {
+                    "model": model_name,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_content}
+                    ],
+                    "max_tokens": 1024
+                }
+
+                result = self._post_with_retry(url, payload, is_lmstudio=True)
+
+                # Unload LM Studio model after request
+                if unload_llm_after:
+                    self._unload_lmstudio_llm()
+
+            else:  # Ollama
+                url = f"http://127.0.0.1:{port}/api/generate"
+                payload = {
+                    "model": model_name,
+                    "prompt": f"{system_prompt}\n\n{full_prompt}".strip(),
+                    "stream": False
+                }
+
+                if img_b64:
+                    payload["images"] = [img_b64]
+                result = self._post_with_retry(url, payload, is_lmstudio=False)
+
+                # Unload Ollama model after request
+                if unload_llm_after:
+                    self._unload_ollama_llm(model_name)
+
+            return (result.strip(), f"{clean_model} ✅")
+
+        except Exception as e:
+            return (f"ERROR: {str(e)}", clean_model)
+
+
+NODE_CLASS_MAPPINGS = {"TASmartLLM": TASmartLLM}
+NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v2.1"}
