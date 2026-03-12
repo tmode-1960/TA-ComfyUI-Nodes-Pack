@@ -97,4 +97,4 @@ http://localhost:8188/ta-nodes/wiki/index.html
 
 ## Links
 
-- [ko-fi.com/thomoart](https://ko-fi.com/thomoart)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/thomoart)
