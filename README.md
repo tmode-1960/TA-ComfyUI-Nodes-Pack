@@ -7,11 +7,6 @@ Custom nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) by **thomo
 
 ![TA-FLEXMOD-LMS Workflow](images/workflow.png)
 
-<details>
-<summary>Full workflow overview</summary>
-
-</details>
-
 ---
 
 ## Overview
