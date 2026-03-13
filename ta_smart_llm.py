@@ -155,7 +155,7 @@ class TASmartLLM:
         models = cls.get_models()
         return {
             "required": {
-                "llm_enable": ("BOOLEAN", {"default": True}),
+                "llm_enable": ("BOOLEAN", {"default": True, "label_on": "✅ LLM ON", "label_off": "❌ OFF"}),
                 "model": (models, {"default": models[0] if models else "No Backend"}),
                 "user_prompt": ("STRING", {"multiline": True, "default": ""}),
                 "system_prompt": ("STRING", {"multiline": True, "default": "You are an expert SD prompt generator."}),
