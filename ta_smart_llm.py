@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Smart LLM
 Created     : 2025
-Modified    : 2026-03-12
+Modified    : 2026-03-13
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.1
+Version     : 2.2
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -98,28 +98,37 @@ class TASmartLLM:
         """
         Discovers and caches available models from LM Studio (port 1234) and
         Ollama (port 11434). Tags vision-capable models with [Vision] suffix.
+
+        Per-backend logic:
+        - If a backend responds, its models replace the cached entries for
+          that backend (additions and deletions are reflected immediately).
+        - If a backend is offline, its cached entries are kept unchanged so
+          that saved workflows remain valid without breaking validation.
         """
         known = cls._load_cached_models()
 
-        current = []
+        # Split cache by backend
+        known_lmstudio = {m for m in known if m.startswith("LMStudio/")}
+        known_ollama   = {m for m in known if m.startswith("Ollama/")}
+
+        # Query LM Studio — replace cache if reachable
         try:
             r = requests.get("http://127.0.0.1:1234/v1/models", timeout=2)
             if r.status_code == 200:
-                for m in r.json()['data']:
-                    current.append(f"LMStudio/{m['id']}")
+                known_lmstudio = {f"LMStudio/{m['id']}" for m in r.json()['data']}
         except:
-            pass
+            pass  # offline — keep existing cache
+
+        # Query Ollama — replace cache if reachable
         try:
             r = requests.get("http://127.0.0.1:11434/api/tags", timeout=2)
             if r.status_code == 200:
-                for m in r.json()['models']:
-                    current.append(f"Ollama/{m['name']}")
+                known_ollama = {f"Ollama/{m['name']}" for m in r.json()['models']}
         except:
-            pass
+            pass  # offline — keep existing cache
 
-        all_models = known | set(current)
-        if current:
-            cls._save_cached_models(all_models)
+        all_models = known_lmstudio | known_ollama
+        cls._save_cached_models(all_models)
 
         tagged = [tag_model(m) for m in sorted(all_models)]
         return tagged if tagged else ["No Backend"]
@@ -146,7 +155,7 @@ class TASmartLLM:
         models = cls.get_models()
         return {
             "required": {
-                "llm_enable": ("BOOLEAN", {"default": True, "label_on": "✅ LLM ON", "label_off": "❌ OFF"}),
+                "llm_enable": ("BOOLEAN", {"default": True}),
                 "model": (models, {"default": models[0] if models else "No Backend"}),
                 "user_prompt": ("STRING", {"multiline": True, "default": ""}),
                 "system_prompt": ("STRING", {"multiline": True, "default": "You are an expert SD prompt generator."}),
@@ -354,4 +363,4 @@ class TASmartLLM:
 
 
 NODE_CLASS_MAPPINGS = {"TASmartLLM": TASmartLLM}
-NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v2.1"}
+NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v2.2"}
