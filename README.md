@@ -17,6 +17,10 @@ The full documentation is available via the built-in **Help button** in each nod
 
 ---
 
+## Changelog
+
+---
+
 ## Nodes
 
 ### 🧠 TA Unified Model Switcher
