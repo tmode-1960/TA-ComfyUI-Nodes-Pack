@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Sampler Preset
 Created     : 2026-03-07
-Modified    : 2026-03-11
+Modified    : 2026-03-14
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.0
+Version     : 2.1
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -221,6 +221,34 @@ async def ta_presets_delete(request):
         del presets[name]
         _save_presets(presets)
         print(f"[TASamplerPreset] Preset '{name}' deleted.")
+        return web.json_response({"ok": True})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)})
+
+
+@PromptServer.instance.routes.post("/ta_sampler_presets/reorder")
+async def ta_presets_reorder(request):
+    """
+    Rewrites ta_sampler_presets.json with keys in the given order.
+
+    Route: POST /ta_sampler_presets/reorder
+    Body:  {'order': ['Name1', 'Name2', ...]}
+
+    Returns:
+        web.Response: JSON response with {'ok': True} on success, or
+                      {'ok': False, 'error': str} on exception.
+    """
+    try:
+        body      = await request.json()
+        order     = body.get("order", [])
+        presets   = _load_presets()
+        reordered = {name: presets[name] for name in order if name in presets}
+        # Safety net: append any presets not included in order
+        for name, data in presets.items():
+            if name not in reordered:
+                reordered[name] = data
+        _save_presets(reordered)
+        print(f"[TASamplerPreset] Reordered: {list(reordered.keys())}")
         return web.json_response({"ok": True})
     except Exception as e:
         return web.json_response({"ok": False, "error": str(e)})
