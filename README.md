@@ -21,6 +21,16 @@ The full documentation is available via the built-in **Help button** in each nod
 
 ---
 
+## Inspiration & Credits
+
+This pack was inspired by and builds on ideas from several excellent projects:
+
+- [ComfyUI-EBU-LMStudio](https://github.com/burnsbert/ComfyUI-EBU-LMStudio) by burnsbert – LM Studio integration for ComfyUI
+- [Comfyui-Memory_Cleanup](https://github.com/LAOGOU-666/Comfyui-Memory_Cleanup) by LAOGOU-666 – RAM/VRAM cleanup nodes
+- [SageAttention](https://github.com/thu-ml/SageAttention) by thu-ml – efficient attention kernel implementation
+
+---
+
 ## Nodes
 
 ### 🧠 TA Unified Model Switcher
