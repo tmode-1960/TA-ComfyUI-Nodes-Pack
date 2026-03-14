@@ -4,7 +4,7 @@ Node Name   : TA Sampler Preset
 Created     : 2026-03-07
 Modified    : 2026-03-14
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.1
+Version     : 2.2
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -274,6 +274,27 @@ class TASamplerPreset:
     FUNCTION     = "get_preset"
     RETURN_TYPES = ("INT",   "FLOAT", "STRING",       "STRING",    "INT",           "INT",         "STRING",)
     RETURN_NAMES = ("steps", "cfg",   "sampler_name", "scheduler", "start_at_step", "end_at_step", "info",)
+
+    @classmethod
+    def IS_CHANGED(cls, preset: str):
+        """
+        Returns the last-modified timestamp of ta_sampler_presets.json.
+
+        ComfyUI calls this before every execution. If the return value differs
+        from the previous call, ComfyUI re-evaluates INPUT_TYPES and re-renders
+        the node — causing the preset dropdown to reflect any changes made in
+        the browser editor without requiring a ComfyUI restart.
+
+        Args:
+            preset (str): Currently selected preset name (unused).
+
+        Returns:
+            float: mtime of the JSON file, or 0.0 if the file does not exist.
+        """
+        try:
+            return os.path.getmtime(_JSON_PATH)
+        except OSError:
+            return 0.0
 
     @classmethod
     def INPUT_TYPES(cls):

@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA KSampler
 Created     : 2026-03-07
-Modified    : 2026-03-11
+Modified    : 2026-03-14
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.0
+Version     : 2.1
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -59,13 +59,22 @@ def _latent_to_pil(latent_tensor: torch.Tensor) -> Image.Image:
     to at least 512 px on the longest side using Lanczos resampling if the
     raw decoded image is smaller.
 
+    Handles both standard (C, H, W) latents and FLUX.2 Klein packed 2D latents
+    delivered as (H*W, C) by reshaping them to (C, H, W) before conversion.
+
     Args:
-        latent_tensor (torch.Tensor): Single latent frame with shape (C, H, W).
+        latent_tensor (torch.Tensor): Single latent frame, either (C, H, W)
+                                      or packed (H*W, C) as from FLUX.2 Klein.
 
     Returns:
         Image.Image: RGB PIL image, upscaled to at least 512 px on the longest side.
     """
-    s = latent_tensor.cpu().float()          # (C, H, W)
+    s = latent_tensor.cpu().float()
+
+    # Guard: must be (C, H, W) at this point
+    if s.dim() != 3:
+        raise ValueError(f"_latent_to_pil expects 3D tensor (C, H, W), got shape {tuple(s.shape)}")
+
     c = s.shape[0]
 
     factors = torch.tensor(_FACTORS_RAW[:c], dtype=torch.float32)   # (C, 3)
@@ -119,23 +128,45 @@ def _make_step_callback(model, steps: int):
     except Exception:
         pass
 
+    preview_failed = [False]  # mutable flag accessible inside closure
+
     def callback(step, x0, x, total_steps):
         # x0: denoised latent after this step, shape (B, C, H, W)
+        if preview_failed[0]:
+            pbar.update_absolute(step + 1, total_steps, None)
+            return
         try:
             # Normalise shape to (C, H, W):
-            # Standard:       (B, C, H, W)    → x0[0]
-            # Qwen / Video:   (B, C, F, H, W) → x0[0, :, 0, :, :]
+            # Standard 4D:        (B, C, H, W)       → x0[0]           e.g. FLUX Dev
+            # Video / Qwen 5D:    (B, C, F, H, W)    → x0[0, :, 0, :, :]
+            # FLUX.2 Klein 3D:    (B, tokens, C)      → depatchify to (C, H, W)
             if x0.dim() == 5:
-                frame = x0[0, :, 0, :, :]   # (C, H, W)
+                frame = x0[0, :, 0, :, :]           # (C, H, W)
             elif x0.dim() == 4:
-                frame = x0[0]               # (C, H, W)
+                frame = x0[0]                        # (C, H, W)
+            elif x0.dim() == 3:
+                seq = x0[0]                          # (tokens, C)
+                tokens, c = seq.shape
+                found = False
+                for h in range(int(tokens ** 0.5) + 1, 0, -1):
+                    if tokens % h == 0:
+                        w = tokens // h
+                        if 0.25 <= h / w <= 4.0:
+                            frame = seq.reshape(h, w, c).permute(2, 0, 1)  # (C, H, W)
+                            found = True
+                            break
+                if not found:
+                    pbar.update_absolute(step + 1, total_steps, None)
+                    return
             else:
-                frame = x0                  # already (C, H, W)
+                frame = x0                           # fallback
             preview_img = _latent_to_pil(frame)
             pbar.update_absolute(step + 1, total_steps, ("JPEG", preview_img, None))
         except Exception as e:
-            # Never let a preview error abort the sampling process.
-            print(f"[TAKSampler] Preview error at step {step+1}: {type(e).__name__}: {e}")
+            # On first failure: log once and disable preview for remaining steps.
+            print(f"[TAKSampler] Preview not supported for this model "
+                  f"(step {step+1}: {type(e).__name__}: {e}) — disabling preview.")
+            preview_failed[0] = True
             pbar.update_absolute(step + 1, total_steps, None)
 
     return callback
