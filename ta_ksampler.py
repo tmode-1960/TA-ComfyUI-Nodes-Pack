@@ -322,9 +322,9 @@ class TAKSampler:
 # ---------------------------------------------------------------------------
 
 NODE_CLASS_MAPPINGS = {
-    "ta_ksampler": TAKSampler,
+    "TAKSampler": TAKSampler,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ta_ksampler": "⚡ TA KSampler",
+    "TAKSampler": "⚡ TA KSampler",
 }

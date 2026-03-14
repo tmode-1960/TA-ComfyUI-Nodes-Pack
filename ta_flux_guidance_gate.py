@@ -103,9 +103,9 @@ class TAFluxGuidanceGate:
 # ---------------------------------------------------------------------------
 
 NODE_CLASS_MAPPINGS = {
-    "ta_flux_guidance_gate": TAFluxGuidanceGate,
+    "TAFluxGuidanceGate": TAFluxGuidanceGate,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ta_flux_guidance_gate": "🌊 TA Flux Guidance Gate",
+    "TAFluxGuidanceGate": "🌊 TA Flux Guidance Gate",
 }

@@ -3,7 +3,7 @@
 Node Name   : TA Save Image With Prompt
 Created     : 2025
 Modified    : 2026-03-11
-Copyright   : © 2026, Thomas Möhrling (thomo.ART)
+Copyright   : © 2026, Thomas Möhring (thomo.ART)
 Version     : 2.0
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack

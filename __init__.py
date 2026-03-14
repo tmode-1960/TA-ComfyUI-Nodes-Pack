@@ -1,13 +1,19 @@
 """
-TA Nodes v3.6 🔥
-© Thomas Möhring (thomo.ART)
+TA ComfyUI Nodes Pack
+© Thomas Möhrling (thomo.ART)
 Erstelldatum: 2026-03-02
-Änderungsdatum: 2026-03-12
-Version: v3.9 - TAHelpLink hinzugefügt
+Änderungsdatum: 2026-03-13
+Version: v4.0 - TADiscordLink hinzugefügt
 """
-# Bestehende Nodes (bleiben unverändert)
+
+print("\n" + "="*60)
+print("  ⚠️  TA-ComfyUI-Nodes-Pack v2.0 — BREAKING CHANGE!")
+print("  v1.x Workflows sind NICHT kompatibel mit v2.x.")
+print("  Bitte README lesen vor dem Update!")
+print("  https://github.com/tmode-1960/TA-ComfyUI-Nodes-Pack")
+print("="*60 + "\n")
+
 from .ta_smart_llm import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
-# Bestehende NEU Nodes
 from .ta_llm_prompt_selector import TA_LLM_PromptSelector
 from .ta_unified_model_switcher import TAUnifiedModelSwitcher
 from .ta_save_image_optional import TASaveImageOptional
@@ -26,6 +32,7 @@ from .ta_model_presets import TAModelPreset
 from .ta_directory_captioning import TACaptioning
 from .ta_cleanup_switch import TACleanupSwitch
 from .ta_help_link import TAHelpLink
+from .ta_discord_link import TADiscordLink
 
 # Erweiterte Mappings (alt + neu)
 NODE_CLASS_MAPPINGS.update({
@@ -38,15 +45,16 @@ NODE_CLASS_MAPPINGS.update({
     "TAPromptController":     TAPromptController,
     "TAPromptHub":            TAPromptHub,
     "TALoadModelWithName":    TALoadModelWithName,
-    "ta_sampler_preset":      TASamplerPreset,
-    "ta_ksampler":            TAKSampler,
-    "ta_latent_preview":      TALatentPreview,
+    "TASamplerPreset":        TASamplerPreset,
+    "TAKSampler":             TAKSampler,
+    "TALatentPreview":        TALatentPreview,
     "TASeedVR2Gate":          TASeedVR2Gate,
-    "ta_flux_guidance_gate":  TAFluxGuidanceGate,
+    "TAFluxGuidanceGate":     TAFluxGuidanceGate,
     "TAModelPreset":          TAModelPreset,
     "TACaptioning":           TACaptioning,
     "TACleanupSwitch":        TACleanupSwitch,
     "TAHelpLink":             TAHelpLink,
+    "TADiscordLink":          TADiscordLink,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -59,15 +67,16 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "TAPromptController":     "🗂️ TA Prompt Controller",
     "TAPromptHub":            "🔀 TA Prompt Hub",
     "TALoadModelWithName":    "📦 TA Load Model (with Name)",
-    "ta_sampler_preset":      "🎛️ TA Sampler Preset",
-    "ta_ksampler":            "⚡ TA KSampler",
-    "ta_latent_preview":      "🖼️ TA Latent Preview",
+    "TASamplerPreset":        "🎛️ TA Sampler Preset",
+    "TAKSampler":             "⚡ TA KSampler",
+    "TALatentPreview":        "🖼️ TA Latent Preview",
     "TASeedVR2Gate":          "🚦 TA SeedVR2 Gate",
-    "ta_flux_guidance_gate":  "🌊 TA Flux Guidance Gate",
+    "TAFluxGuidanceGate":     "🌊 TA Flux Guidance Gate",
     "TAModelPreset":          "🗂️ TA Model Presets",
     "TACaptioning":           "📷 TA Directory Captioning",
     "TACleanupSwitch":        "🧹 TA Cleanup Switch",
     "TAHelpLink":             "🔗 TA Help Link",
+    "TADiscordLink":          "💬 TA Discord Link",
 })
 
 WEB_DIRECTORY = "./web/js"

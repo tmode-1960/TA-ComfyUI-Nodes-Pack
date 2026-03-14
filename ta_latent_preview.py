@@ -164,10 +164,11 @@ class TALatentPreview:
 # Node Registration
 # ---------------------------------------------------------------------------
 
+
 NODE_CLASS_MAPPINGS = {
-    "ta_latent_preview": TALatentPreview,
+    "TALatentPreview": TALatentPreview,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ta_latent_preview": "🖼️ TA Latent Preview",
+    "TALatentPreview": "🖼️ TA Latent Preview",
 }

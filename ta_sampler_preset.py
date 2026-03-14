@@ -324,9 +324,9 @@ class TASamplerPreset:
 # ---------------------------------------------------------------------------
 
 NODE_CLASS_MAPPINGS = {
-    "ta_sampler_preset": TASamplerPreset,
+    "TASamplerPreset": TASamplerPreset,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ta_sampler_preset": "🎛️ TA Sampler Preset",
+    "TASamplerPreset": "🎛️ TA Sampler Preset",
 }

@@ -13,7 +13,7 @@ app.registerExtension({
     name: "TA.SamplerPresetEditorButton",
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
-        if (nodeData.name !== "ta_sampler_preset") return;
+        if (nodeData.name !== "TASamplerPreset") return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
 
