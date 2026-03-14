@@ -228,7 +228,7 @@
     const CLIP_DEVICES = ["default","cpu","gpu"];
 
     // Typen die Dual-CLIP brauchen
-    const DUAL_CLIP_TYPES = ["flux", "sdxl", "flux2"];
+    const DUAL_CLIP_TYPES = ["flux", "sdxl", "flux2", "ace"];
 
     function needsDualClip(clipType) {
         return DUAL_CLIP_TYPES.includes((clipType || "").toLowerCase());
@@ -270,6 +270,8 @@
         const t = (clipType || "").toLowerCase();
         if (t === "flux")  return `CLIP 2 <span style="color:#a78bfa;font-size:0.7rem;">(FLUX: T5-XXL)</span>`;
         if (t === "sdxl")  return `CLIP 2 <span style="color:#a78bfa;font-size:0.7rem;">(SDXL: clip_g)</span>`;
+        if (t === "flux2") return `CLIP 2 <span style="color:#a78bfa;font-size:0.7rem;">(FLUX.2)</span>`;
+        if (t === "ace")   return `CLIP 2 <span style="color:#a78bfa;font-size:0.7rem;">(ACE: 2. Text Encoder)</span>`;
         return "CLIP 2";
     }
 

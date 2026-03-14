@@ -37,5 +37,16 @@
     "clip_type": "auto",
     "clip_device": "default",
     "vae_name": ""
+  },
+  {
+    "name": "ACE",
+    "model_file": "[D] ACE/acestep_v1.5_merge_sft_turbo_ta_0.5.safetensors",
+    "clip_name_1": "ACE/qwen_0.6b_ace15.safetensors",
+    "clip_name_2": "ACE/qwen_4b_ace15.safetensors",
+    "clip_type": "ace",
+    "clip_device": "default",
+    "vae_name": "ACE/ace_1.5_vae.safetensors",
+    "weight_dtype": "auto",
+    "shift": ""
   }
 ]
