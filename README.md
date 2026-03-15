@@ -17,20 +17,6 @@ The full documentation is available via the built-in **Help button** in each nod
 
 ---
 
-## Changelog
-
----
-
-## Inspiration & Credits
-
-This pack was inspired by and builds on ideas from several excellent projects:
-
-- [ComfyUI-EBU-LMStudio](https://github.com/burnsbert/ComfyUI-EBU-LMStudio) by burnsbert – LM Studio integration for ComfyUI
-- [Comfyui-Memory_Cleanup](https://github.com/LAOGOU-666/Comfyui-Memory_Cleanup) by LAOGOU-666 – RAM/VRAM cleanup nodes
-- [SageAttention](https://github.com/thu-ml/SageAttention) by thu-ml – efficient attention kernel implementation
-
----
-
 ## Nodes
 
 ### 🧠 TA Unified Model Switcher
@@ -74,6 +60,9 @@ Extends ComfyUI's built-in SaveImage with optional companion `.txt` files contai
 
 ### 🎬 TA SeedVR2 Gate
 Enable/disable gate for the SeedVR2 upscaler pipeline using lazy evaluation. When disabled, all upstream nodes (including the ~14 GB model loaders) are skipped entirely.
+
+### 💬 TA Discord Link
+Displays a clickable Discord invite link directly inside the ComfyUI graph. URL and button label are configurable via a browser-based editor.
 
 ---
 

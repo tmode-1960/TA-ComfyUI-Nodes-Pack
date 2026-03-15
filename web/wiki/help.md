@@ -67,6 +67,9 @@
     - [Beschreibung](#de-svr2-beschreibung)
     - [Inputs & Outputs](#de-svr2-io)
     - [Tipps & Besonderheiten](#de-svr2-tipps)
+  - [💬 TA Discord Link](#de-dl)
+    - [Beschreibung](#de-dl-beschreibung)
+    - [Tipps & Besonderheiten](#de-dl-tipps)
 - **English**
   - [🧠 TA Unified Model Switcher](#en-ums)
     - [Description](#en-ums-description)
@@ -130,6 +133,9 @@
     - [Description](#en-svr2-description)
     - [Inputs & Outputs](#en-svr2-io)
     - [Tips & Notes](#en-svr2-tips)
+  - [💬 TA Discord Link](#en-dl)
+    - [Description](#en-dl-description)
+    - [Tips & Notes](#en-dl-tips)
 
 ---
 ---
@@ -1022,6 +1028,32 @@ Der Standard-Wert ist `False` – der Upscaler ist standardmäßig aus. Das ist 
 **ExecutionBlocker**
 Bei `enabled=False` gibt der Node `ExecutionBlocker(None)`-Platzhalter zurück, die alle nachgelagerten Nodes in diesem Zweig blockieren.
 
+---
+---
+
+## <a id="de-dl"></a>💬 TA Discord Link
+
+### <a id="de-dl-beschreibung"></a>Beschreibung
+
+Der **TA Discord Link** ist ein rein informativer Node, der einen klickbaren Discord-Einladungslink direkt im ComfyUI-Graph anzeigt. Er hat keine Inputs und keine Outputs.
+
+Die Einladungs-URL und der Button-Text werden in `ta_discord_link.json` gespeichert und können über den integrierten Browser-Editor geändert werden.
+
+**Browser-Editor:**
+```
+http://localhost:8188/ta_discord_link/ui
+```
+
+---
+
+### <a id="de-dl-tipps"></a>Tipps & Besonderheiten
+
+**URL ändern**
+Die Standard-URL `https://discord.gg/YOUR_INVITE_CODE` muss nach der Installation einmalig über den Browser-Editor auf die eigene Discord-Einladung gesetzt werden.
+
+**Kein Neustart nötig**
+Änderungen über den Browser-Editor werden sofort in `ta_discord_link.json` gespeichert. Der Button im Graph zeigt die neue URL beim nächsten Laden des Workflows.
+
 
 ---
 ---
@@ -1907,4 +1939,30 @@ The default value is `False` – the upscaler is off by default. This is intenti
 
 **ExecutionBlocker**
 When `enabled=False`, the node returns `ExecutionBlocker(None)` placeholders that block all downstream nodes in this branch.
+
+---
+---
+
+## <a id="en-dl"></a>💬 TA Discord Link
+
+### <a id="en-dl-description"></a>Description
+
+The **TA Discord Link** is a purely informational node that displays a clickable Discord invite link directly inside the ComfyUI graph. It has no inputs and no outputs.
+
+The invite URL and button label are stored in `ta_discord_link.json` and can be changed via the built-in browser editor.
+
+**Browser editor:**
+```
+http://localhost:8188/ta_discord_link/ui
+```
+
+---
+
+### <a id="en-dl-tips"></a>Tips & Notes
+
+**Changing the URL**
+The default URL `https://discord.gg/YOUR_INVITE_CODE` must be updated once after installation via the browser editor to point to your own Discord invite.
+
+**No restart needed**
+Changes made via the browser editor are saved to `ta_discord_link.json` immediately. The button in the graph reflects the new URL on the next workflow load.
 
