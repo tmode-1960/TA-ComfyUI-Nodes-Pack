@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Smart LLM
 Created     : 2025
-Modified    : 2026-03-13
+Modified    : 2026-03-15
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.2
+Version     : 2.9
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -159,6 +159,8 @@ class TASmartLLM:
                 "model": (models, {"default": models[0] if models else "No Backend"}),
                 "user_prompt": ("STRING", {"multiline": True, "default": ""}),
                 "system_prompt": ("STRING", {"multiline": True, "default": "You are an expert SD prompt generator."}),
+                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64}),
                 "unload_image_models_first": ("BOOLEAN", {"default": False}),
                 "unload_llm_after": ("BOOLEAN", {"default": False}),
             },
@@ -269,6 +271,7 @@ class TASmartLLM:
         raise last_error
 
     def generate(self, llm_enable, model, user_prompt, system_prompt,
+                 temperature=0.7, max_tokens=1024,
                  unload_image_models_first=False, unload_llm_after=False,
                  image=None):
         """
@@ -331,7 +334,8 @@ class TASmartLLM:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}
                     ],
-                    "max_tokens": 1024
+                    "temperature": temperature,
+                    "max_tokens": max_tokens
                 }
 
                 result = self._post_with_retry(url, payload, is_lmstudio=True)
@@ -345,7 +349,11 @@ class TASmartLLM:
                 payload = {
                     "model": model_name,
                     "prompt": f"{system_prompt}\n\n{full_prompt}".strip(),
-                    "stream": False
+                    "stream": False,
+                    "options": {
+                        "temperature": temperature,
+                        "num_predict": max_tokens
+                    }
                 }
 
                 if img_b64:
@@ -363,4 +371,4 @@ class TASmartLLM:
 
 
 NODE_CLASS_MAPPINGS = {"TASmartLLM": TASmartLLM}
-NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v2.2"}
+NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v2.9"}
