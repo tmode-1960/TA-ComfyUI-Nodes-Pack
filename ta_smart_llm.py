@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Smart LLM
 Created     : 2025
-Modified    : 2026-03-15
+Modified    : 2026-03-16
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.9
+Version     : 3.0
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -99,39 +99,48 @@ class TASmartLLM:
         Discovers and caches available models from LM Studio (port 1234) and
         Ollama (port 11434). Tags vision-capable models with [Vision] suffix.
 
-        Per-backend logic:
-        - If a backend responds, its models replace the cached entries for
-          that backend (additions and deletions are reflected immediately).
-        - If a backend is offline, its cached entries are kept unchanged so
-          that saved workflows remain valid without breaking validation.
+        Display logic:
+        - All known models are always shown (prevents validation errors).
+        - Active models appear at the top of the list, offline models below.
+        - No prefix is added to model names so stored values remain stable
+          across restarts regardless of which backend is active.
+        - Per-backend cache is updated on each call if the backend responds,
+          so added/removed models are reflected immediately.
         """
         known = cls._load_cached_models()
 
-        # Split cache by backend
         known_lmstudio = {m for m in known if m.startswith("LMStudio/")}
         known_ollama   = {m for m in known if m.startswith("Ollama/")}
 
+        active_lmstudio = set()
+        active_ollama   = set()
+
         # Query LM Studio — replace cache if reachable
         try:
-            r = requests.get("http://127.0.0.1:1234/v1/models", timeout=2)
+            r = requests.get("http://127.0.0.1:1234/v1/models", timeout=0.5)
             if r.status_code == 200:
                 known_lmstudio = {f"LMStudio/{m['id']}" for m in r.json()['data']}
+                active_lmstudio = known_lmstudio
         except:
-            pass  # offline — keep existing cache
+            pass
 
         # Query Ollama — replace cache if reachable
         try:
-            r = requests.get("http://127.0.0.1:11434/api/tags", timeout=2)
+            r = requests.get("http://127.0.0.1:11434/api/tags", timeout=0.5)
             if r.status_code == 200:
                 known_ollama = {f"Ollama/{m['name']}" for m in r.json()['models']}
+                active_ollama = known_ollama
         except:
-            pass  # offline — keep existing cache
+            pass
 
-        all_models = known_lmstudio | known_ollama
-        cls._save_cached_models(all_models)
+        cls._save_cached_models(known_lmstudio | known_ollama)
 
-        tagged = [tag_model(m) for m in sorted(all_models)]
-        return tagged if tagged else ["No Backend"]
+        active  = sorted(active_lmstudio | active_ollama)
+        offline = sorted((known_lmstudio | known_ollama) - (active_lmstudio | active_ollama))
+
+        # Active models first, offline models after — no prefix in stored value
+        result = [tag_model(m) for m in active] + [tag_model(m) for m in offline]
+        return result if result else ["No Backend"]
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -175,7 +184,13 @@ class TASmartLLM:
     CATEGORY = "TA Tools"
 
     @classmethod
-    def IS_CHANGED(cls, *args, **kwargs):
+    def IS_CHANGED(cls, llm_enable, model, user_prompt, system_prompt,
+                   temperature=0.7, max_tokens=1024,
+                   unload_image_models_first=False, unload_llm_after=False,
+                   image=None):
+        # Wenn deaktiviert: fixer Wert → Node wird von ComfyUI gecacht, kein erneuter Aufruf
+        if not llm_enable:
+            return "disabled"
         return time.time()
 
     def _backend_reachable(self, backend, port):
@@ -184,7 +199,7 @@ class TASmartLLM:
         """
         try:
             url = f"http://127.0.0.1:{port}/v1/models" if "LMStudio" in backend else f"http://127.0.0.1:{port}/api/tags"
-            return requests.get(url, timeout=2).status_code == 200
+            return requests.get(url, timeout=0.5).status_code == 200
         except:
             return False
 
@@ -231,20 +246,6 @@ class TASmartLLM:
         buffer = BytesIO()
         img.save(buffer, 'PNG')
         return base64.b64encode(buffer.getvalue()).decode('utf-8')
-
-    def _flush_lmstudio_context(self, url, model_name):
-        """
-        Sends a minimal request to clear LM Studio chat context.
-        """
-        try:
-            requests.post(url, json={
-                "model": model_name,
-                "messages": [{"role": "user", "content": "."}],
-                "max_tokens": 1
-            }, timeout=10)
-        except:
-            pass
-        time.sleep(0.5)
 
     def _post_with_retry(self, url, payload, is_lmstudio, max_retries=3, retry_delay=1.5):
         """
@@ -321,7 +322,6 @@ class TASmartLLM:
             if "LMStudio" in backend:
                 url = f"http://127.0.0.1:{port}/v1/chat/completions"
                 if img_b64:
-                    self._flush_lmstudio_context(url, model_name)
                     user_content = [
                         {"type": "text", "text": full_prompt},
                         {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}}
@@ -371,4 +371,4 @@ class TASmartLLM:
 
 
 NODE_CLASS_MAPPINGS = {"TASmartLLM": TASmartLLM}
-NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v2.9"}
+NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v3.0"}
