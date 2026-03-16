@@ -16,7 +16,16 @@ A collection of nodes designed for use in thomo.ART workflows, focused on flexib
 The full documentation is available via the built-in **Help button** in each node (opens in your browser at `http://localhost:8188/ta-nodes/wiki/index.html`).
 
 ---
+## Changelog
+**v2.0.2 changed ta_smart_llm**  
+ta_smart_llm v3.0 is the consolidated version with all fixes:
+- Active models are now displayed at the top of the dropdown, offline models at the bottom — no validation error
+- timeout=0.5 for all backend queries
+- IS_CHANGED returns "disabled" if llm_enable=False — the node is cached
+- _flush_lmstudio_context removed — saves the 0.5s pause before vision requests
+- temperature + max_tokens as configurable parameters  
 
+---
 ## Nodes
 
 ### 🧠 TA Unified Model Switcher
