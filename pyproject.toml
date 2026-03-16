@@ -1,6 +1,6 @@
 [project]
 name = "TA-ComfyUI-Nodes-Pack"
-version = "2.0.0"
+version = "2.0.1"
 description = "Custom ComfyUI nodes for advanced AI image workflows. Includes smart model loaders (FLUX, SDXL, ZImage, Qwen), LM Studio/Ollama integration, sampler presets, VRAM/RAM cleanup, and prompt utilities."
 readme = "README.md"
 requires-python = ">=3.8"
