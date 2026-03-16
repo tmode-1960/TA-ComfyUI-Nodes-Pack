@@ -4,7 +4,7 @@ Node Name   : TA Smart LLM
 Created     : 2025
 Modified    : 2026-03-16
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 3.0
+Version     : 3.1
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -170,8 +170,8 @@ class TASmartLLM:
                 "system_prompt": ("STRING", {"multiline": True, "default": "You are an expert SD prompt generator."}),
                 "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64}),
-                "unload_image_models_first": ("BOOLEAN", {"default": False}),
-                "unload_llm_after": ("BOOLEAN", {"default": False}),
+                "unload_image_models_first": ("BOOLEAN", {"default": True}),
+                "unload_llm_after": ("BOOLEAN", {"default": True}),
             },
             "optional": {
                 "image": ("IMAGE",)
@@ -371,4 +371,4 @@ class TASmartLLM:
 
 
 NODE_CLASS_MAPPINGS = {"TASmartLLM": TASmartLLM}
-NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v3.0"}
+NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v3.1"}

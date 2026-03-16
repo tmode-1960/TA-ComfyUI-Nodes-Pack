@@ -17,6 +17,10 @@ The full documentation is available via the built-in **Help button** in each nod
 
 ---
 ## Changelog
+**v2.0.3 changed ta_smart_llm**   
+ta_smart_llm v3.1:  
+- `unload_image_models_first` and `unload_llm_after` now default to `True`. Note that existing nodes in the workflow retain their saved values—the new default only applies to newly placed nodes.  
+
 **v2.0.2 changed ta_smart_llm**  
 ta_smart_llm v3.0 is the consolidated version with all fixes:
 - Active models are now displayed at the top of the dropdown, offline models at the bottom — no validation error
