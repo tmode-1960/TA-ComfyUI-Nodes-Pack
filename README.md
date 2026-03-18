@@ -16,6 +16,16 @@ A collection of nodes designed for use in thomo.ART workflows, focused on flexib
 The full documentation is available via the built-in **Help button** in each node (opens in your browser at `http://localhost:8188/ta-nodes/wiki/index.html`).
 
 ---
+## Credits
+This project was inspired by or builds upon the following open-source works:
+
+- **[ComfyUI-EBU-LMStudio](https://github.com/burnsbert/ComfyUI-EBU-LMStudio)** by [burnsbert (Eric W. Burns)](https://github.com/burnsbert)
+  Inspiration for the LM Studio / LLM integration in ComfyUI, implemented in the **TASmartLLM** node with support for both LM Studio and Ollama.
+
+- **[Comfyui-Memory_Cleanup](https://github.com/LAOGOU-666/Comfyui-Memory_Cleanup)** by [LAOGOU-666](https://github.com/LAOGOU-666)
+  Inspiration for the VRAM and RAM cleanup logic in the **TACleanupSwitch** node.
+---
+
 ## Changelog
 **v2.0.3 changed ta_smart_llm**   
 ta_smart_llm v3.1:  
