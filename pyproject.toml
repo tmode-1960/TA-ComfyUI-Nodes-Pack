@@ -27,5 +27,5 @@ build-backend = "setuptools.build_meta"
 # ComfyUI Registry Konfiguration
 [tool.comfy]
 PublisherId = "tmode-1960"
-DisplayName = "TA ComfyUI Nodes Pack"
+DisplayName = "TA-ComfyUI-Nodes-Pack"
 Icon = ""  # Optional: URL zu einem Icon
