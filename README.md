@@ -82,7 +82,7 @@ Displays a clickable Discord invite link directly inside the ComfyUI graph. URL 
 ## Installation
 
 ### Via ComfyUI Manager
-Search for `TA-ComfyUI-Nodes-Pack` in the ComfyUI Manager and install.
+Search for `TA ComfyUI Nodes Pack` in the ComfyUI Manager and install.
 
 ### Manual
 ```bash
