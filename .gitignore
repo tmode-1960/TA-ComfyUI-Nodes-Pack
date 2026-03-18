@@ -1,1 +1,8 @@
 __pycache__
+
+# Nutzerspezifische Konfigurationsdateien – nicht durch Updates überschreiben
+ta_discord_link.json
+ta_model_choices.json
+ta_model_presets.json
+ta_sampler_presets.json
+ta_smart_llm_models.json
