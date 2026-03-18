@@ -27,6 +27,9 @@ This project was inspired by or builds upon the following open-source works:
 ---
 
 ## Changelog
+**v2.0.5 changed .gitignore**
+- All JSON files have been added to Gitignore so that they will no longer be overwritten during an update.  
+ 
 **v2.0.3 changed ta_smart_llm**   
 ta_smart_llm v3.1:  
 - `unload_image_models_first` and `unload_llm_after` now default to `True`. Note that existing nodes in the workflow retain their saved values—the new default only applies to newly placed nodes.  

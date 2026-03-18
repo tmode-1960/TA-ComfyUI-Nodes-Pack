@@ -2,7 +2,7 @@
   "name": "TA-ComfyUI-Nodes-Pack",
   "author": "tmode-1960",
   "description": "Custom ComfyUI nodes for advanced AI image workflows. Includes smart model loaders (FLUX, SDXL, ZImage, Qwen), LM Studio/Ollama integration, sampler presets, VRAM/RAM cleanup, and prompt utilities.",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "repository": "https://github.com/tmode-1960/TA-ComfyUI-Nodes-Pack",
   "license": "Apache 2.0"
 }
