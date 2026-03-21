@@ -27,6 +27,9 @@ This project was inspired by or builds upon the following open-source works:
 ---
 
 ## Changelog
+**v2.0.6 changed ta_smart_llm to v3.2**
+- `request_timeout` is built as an INT widget between `max_tokens` and `unload_image_models_first` — default 120s, adjustable from 30 to 600s in increments of 30.  
+
 **v2.0.5 changed .gitignore**
 - All JSON files have been added to Gitignore so that they will no longer be overwritten during an update.  
  
