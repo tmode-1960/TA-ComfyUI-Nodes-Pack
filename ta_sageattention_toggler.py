@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA SageAttention Toggler
 Created     : 2025
-Modified    : 2026-03-11
+Modified    : 2026-03-27
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.0
+Version     : 2.1
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -98,13 +98,21 @@ class TASageAttentionToggler:
         logger.info(f"🚀 [TA] SageToggler START | Sage:{sage_enable} | Torch:{torch_enable} | Mode:{sage_mode}")
         patched_model = model
 
+        applied = []
+
         if sage_enable:
             patched_model = self._apply_sage_patch(patched_model, sage_mode)
+            applied.append(f"Sage({sage_mode})")
 
         if torch_enable:
             patched_model = self._apply_torch_patch(patched_model)
+            applied.append("Torch FP16")
 
-        logger.info("✅ [TA] Patches applied!")
+        if applied:
+            logger.info(f"✅ [TA] Patches applied: {', '.join(applied)}")
+        else:
+            logger.info("⏭️ [TA] No patches applied – both toggles disabled, model passed through.")
+
         return (patched_model, )
 
     def _apply_sage_patch(self, model, sage_mode):
