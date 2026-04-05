@@ -27,6 +27,14 @@ This project was inspired by or builds upon the following open-source works:
 ---
 
 ## Changelog
+**v2.0.8 changed ta_smart_llm to v3.7**  
+
+v3.3 — Empty LLM response detection: status output now shows a warning instead of silently passing an empty prompt downstream.
+v3.4 — Added thinking_mode toggle (✅ Thinking ON / ❌ Thinking OFF) to strip or keep the [think]...[/think} block from models with reasoning/thinking capabilities.
+v3.5 — LM Studio 0.4.7+ compatibility: the node now reads reasoning_content as fallback when content is empty, fixing the blank prompt issue introduced in newer LM Studio versions.
+v3.6 — Fixed inverted thinking_mode logic and refactored response parsing to correctly handle all three scenarios: LM Studio 0.4.6 (content with tags), LM Studio 0.4.7+ (reasoning_content without tags), and Ollama.
+v3.7 — Renamed internal parameter strip_thinking to thinking_mode for clarity.
+
 **v2.0.6 changed ta_smart_llm to v3.2**
 - `request_timeout` is built as an INT widget between `max_tokens` and `unload_image_models_first` — default 120s, adjustable from 30 to 600s in increments of 30.  
 
