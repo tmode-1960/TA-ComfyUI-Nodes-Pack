@@ -426,9 +426,13 @@ Der Node erkennt automatisch welche Modelle Vision-fähig sind und kennzeichnet 
 | Name | Typ | Beschreibung |
 |------|-----|--------------|
 | `llm_enable` | BOOLEAN | Master-Schalter. Bei `OFF` wird der Node übersprungen und gibt leeren String zurück. |
-| `model` | Dropdown | Auswahl des LLM-Modells. Automatisch befüllt aus LM Studio und Ollama. Vision-Modelle sind mit `[Vision]` gekennzeichnet. |
+| `model` | Dropdown | Auswahl des LLM-Modells. Automatisch befüllt aus LM Studio und Ollama. Vision-Modelle sind mit `[Vision]` gekennzeichnet. Aktive Modelle erscheinen oben in der Liste. |
 | `user_prompt` | STRING | Haupteingabe für den LLM (Text2Prompt oder Bildbeschreibungsanweisung). |
 | `system_prompt` | STRING | Systemanweisung für das Modell, z.B. Rolle oder Ausgabeformat. |
+| `temperature` | FLOAT | Kreativität der Ausgabe. Niedrig (0.3–0.5) für präzise Beschreibungen, höher (0.7–0.9) für kreative Prompts. Standard: `0.7`. |
+| `max_tokens` | INT | Maximale Anzahl an Tokens in der Antwort. Obere Grenze – das Modell hört auf wenn es fertig ist. Standard: `1024`. |
+| `request_timeout` | INT | Timeout für die LLM-Anfrage in Sekunden. Bei langsamen Systemen oder großen `max_tokens`-Werten erhöhen. Standard: `120`. |
+| `thinking_mode` | BOOLEAN | Steuerung des Thinking-Modus für Reasoning-Modelle (z.B. Qwen3). `ON` = Thinking-Block wird ausgegeben, `OFF` = nur der finale Prompt wird zurückgegeben. |
 | `unload_image_models_first` | BOOLEAN | Entlädt ComfyUI-Bildmodelle vor der LLM-Anfrage, um VRAM freizugeben. |
 | `unload_llm_after` | BOOLEAN | Entlädt das LLM-Modell nach der Generierung aus dem Backend. |
 | `image` | IMAGE *(optional)* | Bild-Input für Vision-Modelle (Image2Prompt). Wird ignoriert wenn kein Vision-Modell ausgewählt ist. |
@@ -437,8 +441,8 @@ Der Node erkennt automatisch welche Modelle Vision-fähig sind und kennzeichnet 
 
 | Name | Typ | Beschreibung |
 |------|-----|--------------|
-| `prompt` | STRING | Der generierte Prompt-Text. |
-| `status` | STRING | Status der Ausführung, z.B. `LMStudio/model ✅`, `DISABLED`, `SKIPPED - Ollama not reachable`. |
+| `prompt` | STRING | Der generierte Prompt-Text. Leer wenn das Modell keine Antwort liefert. |
+| `status` | STRING | Status der Ausführung, z.B. `LMStudio/model ✅`, `DISABLED`, `SKIPPED - Ollama not reachable`, `WARNING: model returned empty response`. |
 
 ---
 
@@ -456,9 +460,13 @@ Modelle die nicht automatisch erkannt werden, können manuell in `VISION_MANUAL`
 
 Beim Start fragt der Node LM Studio (Port `1234`) und Ollama (Port `11434`) nach verfügbaren Modellen. Die Ergebnisse werden in der Datei `ta_smart_llm_models.json` im Node-Pack-Verzeichnis gespeichert.
 
-Ist ein Backend beim nächsten Start nicht erreichbar, werden die zuletzt bekannten Modelle aus dem Cache geladen und im Dropdown angezeigt – so bleibt das Dropdown auch bei gestopptem Backend befüllt.
+**Aktive Modelle erscheinen oben** in der Dropdown-Liste, Modelle von nicht erreichbaren Backends werden darunter angezeigt – so ist auf einen Blick erkennbar welches Backend gerade läuft.
 
-> ⚠️ **ComfyUI muss neu gestartet werden**, damit neu installierte Modelle im Dropdown erscheinen.
+Ist ein Backend beim nächsten Start nicht erreichbar, werden die zuletzt bekannten Modelle aus dem Cache geladen und im Dropdown angezeigt – das gespeicherte Modell bleibt immer in der Liste und der Workflow bricht nicht ab.
+
+Neu installierte oder gelöschte Modelle werden automatisch beim nächsten Workflow-Run erkannt – ein ComfyUI-Neustart ist nicht erforderlich.
+
+> ⚠️ Die Datei `ta_smart_llm_models.json` sollte als leere Datei (`[]`) weitergegeben werden, damit Empfänger nicht deine persönlichen Modellnamen im Dropdown sehen.
 
 ---
 
@@ -467,14 +475,29 @@ Ist ein Backend beim nächsten Start nicht erreichbar, werden die zuletzt bekann
 **Kein Backend erreichbar**
 Ist weder LM Studio noch Ollama beim Start von ComfyUI erreichbar und kein Cache vorhanden, zeigt das Dropdown `No Backend`. Der Node gibt dann beim Ausführen `SKIPPED` als Status zurück und erzeugt keinen Fehler im Workflow.
 
-**ComfyUI-Neustart nach Modellinstallation**
-Neu installierte Modelle in LM Studio oder Ollama erscheinen erst nach einem Neustart von ComfyUI im Dropdown, da die Modellliste nur beim Start befüllt wird.
+**Leere Antwort**
+Gibt das Modell einen leeren Prompt zurück, erscheint im `status` Output `WARNING: model returned empty response`. Das deutet auf ein Modell- oder Backend-Problem hin, nicht auf einen Node-Fehler.
+
+**Thinking-Modelle (z.B. Qwen3)**
+Modelle mit Reasoning-Modus generieren intern einen Denkprozess. Mit `thinking_mode OFF` wird dieser automatisch entfernt und nur der finale Prompt ausgegeben. LM Studio 0.4.7+ liefert Thinking-Content im separaten Feld `reasoning_content` – der Node liest beide Felder korrekt aus.
+
+**temperature & max_tokens**
+Für Text2Prompt empfiehlt sich `temperature` zwischen `0.7` und `0.9`. Für Image2Prompt (präzise Bildbeschreibung) ist `0.3`–`0.5` sinnvoller. `max_tokens` ist eine Obergrenze – das Modell hört auf wenn es fertig ist, nicht erst bei Erreichen des Limits.
+
+**request_timeout**
+Bei großen `max_tokens`-Werten oder langsamen Systemen den Timeout entsprechend erhöhen. Standard ist `120` Sekunden.
 
 **VRAM-Management**
 `unload_image_models_first` ist nützlich bei knappem VRAM – es entlädt alle ComfyUI-Bildmodelle bevor das LLM lädt. `unload_llm_after` gibt den VRAM nach der Generierung wieder frei, bevor der restliche Workflow die Bildmodelle lädt.
 
 **Image2Prompt**
 Für Image2Prompt ein `[Vision]`-Modell auswählen und ein Bild am `image`-Eingang verbinden. Im `user_prompt` die gewünschte Anweisung eingeben, z.B. `Describe this image as a detailed Stable Diffusion prompt.`
+
+**Manuelle Vision-Kennzeichnung**
+Modelle die nicht automatisch als Vision erkannt werden (z.B. weil `vl` nicht im Namen vorkommt) können manuell in `VISION_MANUAL` in der Datei `ta_smart_llm.py` eingetragen werden:
+```python
+VISION_MANUAL = {"mein-vision-model-7b"}
+```
 
 ---
 ---
@@ -1341,9 +1364,13 @@ The node automatically detects which models are vision-capable and marks them in
 | Name | Type | Description |
 |------|------|-------------|
 | `llm_enable` | BOOLEAN | Master toggle. When `OFF`, the node is skipped and returns an empty string. |
-| `model` | Dropdown | LLM model selection. Auto-populated from LM Studio and Ollama. Vision models are marked with `[Vision]`. |
+| `model` | Dropdown | LLM model selection. Auto-populated from LM Studio and Ollama. Vision models are marked with `[Vision]`. Active models appear at the top of the list. |
 | `user_prompt` | STRING | Main input for the LLM (Text2Prompt or image description instruction). |
 | `system_prompt` | STRING | System instruction for the model, e.g. role or output format. |
+| `temperature` | FLOAT | Output creativity. Low (0.3–0.5) for precise descriptions, higher (0.7–0.9) for creative prompts. Default: `0.7`. |
+| `max_tokens` | INT | Maximum number of tokens in the response. Upper limit – the model stops when finished, not necessarily at this value. Default: `1024`. |
+| `request_timeout` | INT | Timeout for the LLM request in seconds. Increase for slow systems or large `max_tokens` values. Default: `120`. |
+| `thinking_mode` | BOOLEAN | Controls the thinking mode for reasoning models (e.g. Qwen3). `ON` = thinking block is included in the output, `OFF` = only the final prompt is returned. |
 | `unload_image_models_first` | BOOLEAN | Unloads ComfyUI image models before the LLM request to free VRAM. |
 | `unload_llm_after` | BOOLEAN | Unloads the LLM model from the backend after generation. |
 | `image` | IMAGE *(optional)* | Image input for vision models (Image2Prompt). Ignored if no vision model is selected. |
@@ -1352,8 +1379,8 @@ The node automatically detects which models are vision-capable and marks them in
 
 | Name | Type | Description |
 |------|------|-------------|
-| `prompt` | STRING | The generated prompt text. |
-| `status` | STRING | Execution status, e.g. `LMStudio/model ✅`, `DISABLED`, `SKIPPED - Ollama not reachable`. |
+| `prompt` | STRING | The generated prompt text. Empty if the model returns no response. |
+| `status` | STRING | Execution status, e.g. `LMStudio/model ✅`, `DISABLED`, `SKIPPED - Ollama not reachable`, `WARNING: model returned empty response`. |
 
 ---
 
@@ -1371,9 +1398,13 @@ Models that are not detected automatically can be added manually to `VISION_MANU
 
 On startup, the node queries LM Studio (port `1234`) and Ollama (port `11434`) for available models. The results are saved to `ta_smart_llm_models.json` in the node pack directory.
 
-If a backend is unavailable on the next startup, the last known models are loaded from the cache and shown in the dropdown – keeping the dropdown populated even when a backend is stopped.
+**Active models appear at the top** of the dropdown list, while models from unreachable backends are shown below – making it immediately clear which backend is currently running.
 
-> ⚠️ **ComfyUI must be restarted** for newly installed models to appear in the dropdown.
+If a backend is unavailable on the next startup, the last known models are loaded from the cache and shown in the dropdown – the saved model is always kept in the list to prevent workflow validation errors.
+
+Added or removed models are detected automatically on the next workflow run – no ComfyUI restart required.
+
+> ⚠️ The file `ta_smart_llm_models.json` should be distributed as an empty file (`[]`) so that recipients do not see your personal model names in the dropdown.
 
 ---
 
@@ -1382,14 +1413,29 @@ If a backend is unavailable on the next startup, the last known models are loade
 **No backend reachable**
 If neither LM Studio nor Ollama is reachable at ComfyUI startup and no cache exists, the dropdown shows `No Backend`. When executed, the node returns `SKIPPED` as status and does not cause a workflow error.
 
-**ComfyUI restart after model installation**
-Newly installed models in LM Studio or Ollama only appear in the dropdown after restarting ComfyUI, as the model list is only populated at startup.
+**Empty response**
+If the model returns an empty prompt, the `status` output shows `WARNING: model returned empty response`. This indicates a model or backend issue, not a node error.
+
+**Thinking models (e.g. Qwen3)**
+Models with a reasoning mode generate an internal thinking process. With `thinking_mode OFF`, this is automatically removed and only the final prompt is returned. LM Studio 0.4.7+ delivers thinking content in the separate `reasoning_content` field – the node reads both fields correctly.
+
+**temperature & max_tokens**
+For Text2Prompt a `temperature` between `0.7` and `0.9` is recommended. For Image2Prompt (precise image description), `0.3`–`0.5` is more appropriate. `max_tokens` is an upper limit – the model stops when it is done, not necessarily at this value.
+
+**request_timeout**
+For large `max_tokens` values or slow systems, increase the timeout accordingly. Default is `120` seconds.
 
 **VRAM management**
 `unload_image_models_first` is useful when VRAM is tight – it unloads all ComfyUI image models before the LLM loads. `unload_llm_after` frees VRAM after generation before the rest of the workflow loads image models.
 
 **Image2Prompt**
 For Image2Prompt, select a `[Vision]` model and connect an image to the `image` input. Enter the desired instruction in `user_prompt`, e.g. `Describe this image as a detailed Stable Diffusion prompt.`
+
+**Manual vision tagging**
+Models not automatically detected as vision-capable (e.g. because `vl` is not in the name) can be added manually to `VISION_MANUAL` in `ta_smart_llm.py`:
+```python
+VISION_MANUAL = {"my-vision-model-7b"}
+```
 
 ---
 ---
