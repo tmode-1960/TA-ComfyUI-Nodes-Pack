@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Smart LLM
 Created     : 2025
-Modified    : 2026-03-21
+Modified    : 2026-04-04
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 3.2
+Version     : 3.7
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -171,6 +171,7 @@ class TASmartLLM:
                 "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64}),
                 "request_timeout": ("INT", {"default": 120, "min": 30, "max": 600, "step": 30}),
+                "thinking_mode": ("BOOLEAN", {"default": True, "label_on": "✅ Thinking ON", "label_off": "❌ Thinking OFF"}),
                 "unload_image_models_first": ("BOOLEAN", {"default": True}),
                 "unload_llm_after": ("BOOLEAN", {"default": True}),
             },
@@ -187,6 +188,7 @@ class TASmartLLM:
     @classmethod
     def IS_CHANGED(cls, llm_enable, model, user_prompt, system_prompt,
                    temperature=0.7, max_tokens=1024, request_timeout=120,
+                   thinking_mode=False,
                    unload_image_models_first=False, unload_llm_after=False,
                    image=None):
         # Wenn deaktiviert: fixer Wert → Node wird von ComfyUI gecacht, kein erneuter Aufruf
@@ -251,13 +253,17 @@ class TASmartLLM:
     def _post_with_retry(self, url, payload, is_lmstudio, max_retries=3, retry_delay=1.5, timeout=120):
         """
         Posts to LLM API with retry logic for transient errors.
+        For LM Studio returns the full message dict; for Ollama returns the response string.
         """
         last_error = None
         for attempt in range(1, max_retries + 1):
             try:
                 r = requests.post(url, json=payload, timeout=timeout)
                 r.raise_for_status()
-                return r.json()['choices'][0]['message']['content'] if is_lmstudio else r.json()['response']
+                if is_lmstudio:
+                    return r.json()['choices'][0]['message']  # Return full message dict
+                else:
+                    return r.json()['response']
             except requests.exceptions.HTTPError as e:
                 last_error = e
                 if e.response is not None and e.response.status_code in (400, 500, 502, 503) and attempt < max_retries:
@@ -274,6 +280,7 @@ class TASmartLLM:
 
     def generate(self, llm_enable, model, user_prompt, system_prompt,
                  temperature=0.7, max_tokens=1024, request_timeout=120,
+                 thinking_mode=False,
                  unload_image_models_first=False, unload_llm_after=False,
                  image=None):
         """
@@ -339,7 +346,32 @@ class TASmartLLM:
                     "max_tokens": max_tokens
                 }
 
-                result = self._post_with_retry(url, payload, is_lmstudio=True, timeout=request_timeout)
+                message = self._post_with_retry(url, payload, is_lmstudio=True, timeout=request_timeout)
+
+                content         = (message.get('content') or '').strip()
+                reasoning       = (message.get('reasoning_content') or '').strip()
+
+                if thinking_mode:
+                    # Thinking ON → return full content including thinking
+                    # Prefer reasoning_content if content is empty (LM Studio 0.4.7+)
+                    result = content if content else reasoning
+                    if not result and reasoning:
+                        result = reasoning
+                else:
+                    # Thinking OFF → return only the final answer, strip thinking
+                    if content:
+                        # content may still contain <think> tags (older LM Studio)
+                        if "</think>" in content:
+                            result = content.split("</think>", 1)[-1].strip()
+                        else:
+                            result = content
+                    else:
+                        # LM Studio 0.4.7+: answer is missing, only reasoning available
+                        # Try to extract post-</think> from reasoning_content
+                        if "</think>" in reasoning:
+                            result = reasoning.split("</think>", 1)[-1].strip()
+                        else:
+                            result = ""  # Pure thinking block, no answer
 
                 # Unload LM Studio model after request
                 if unload_llm_after:
@@ -361,15 +393,19 @@ class TASmartLLM:
                     payload["images"] = [img_b64]
                 result = self._post_with_retry(url, payload, is_lmstudio=False, timeout=request_timeout)
 
+                # Ollama: strip <think> tags if thinking is OFF
+                if not thinking_mode and "</think>" in result:
+                    result = result.split("</think>", 1)[-1].strip()
+
                 # Unload Ollama model after request
                 if unload_llm_after:
                     self._unload_ollama_llm(model_name)
 
-            return (result.strip(), f"{clean_model} ✅")
+            return (result.strip(), f"{clean_model} ✅") if result.strip() else ("", f"WARNING: {clean_model} returned empty response")
 
         except Exception as e:
             return (f"ERROR: {str(e)}", clean_model)
 
 
 NODE_CLASS_MAPPINGS = {"TASmartLLM": TASmartLLM}
-NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v3.2"}
+NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v3.7"}
