@@ -35,8 +35,8 @@ VISION_KEYWORDS = ["llava", "vision", "-vl-", "_vl_", "vl-", "vl_", "moondream",
 
 # Manual additions (exact model names without backend prefix, lowercase)
 # Example: VISION_MANUAL = {"my-vision-model-7b", "another-model-13b"}
-VISION_MANUAL = set()
-
+# VISION_MANUAL = set()
+VISION_MANUAL = {"qwen3.5-9b-uncensored-hauhaucs-aggressive"}
 
 def is_vision_model(model_id: str) -> bool:
     lower = model_id.lower()
