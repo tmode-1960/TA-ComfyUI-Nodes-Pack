@@ -21,7 +21,7 @@ app.registerExtension({
             if (onNodeCreated) onNodeCreated.apply(this, arguments);
 
             this.addWidget("button", "✏️ Preset Editor öffnen", null, () => {
-                window.open("http://localhost:8188/ta_sampler_presets/ui", "_blank");
+                window.open(window.location.origin + "/ta_sampler_presets/ui", "_blank");
             });
         };
     },
