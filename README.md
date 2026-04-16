@@ -25,6 +25,15 @@ This project was inspired by or builds upon the following open-source works:
 - **[Comfyui-Memory_Cleanup](https://github.com/LAOGOU-666/Comfyui-Memory_Cleanup)** by [LAOGOU-666](https://github.com/LAOGOU-666)
   Inspiration for the VRAM and RAM cleanup logic in the **TACleanupSwitch** node.
 ---
+## Tested on the following system:  
+- CPU: AMD Ryzen 9 5900X
+- RAM: 64GB
+- GPU: RTX 3090 (24GB VRAM)
+- Python: 3.12.10
+- Torch version: 2.9.1+cu130
+- Triton version: 3.5.1
+- LM Studio: 0.4.11 (Build 1)
+- Ollama: 0.20.2  
 
 ## Changelog
 **v2.0.9 changed ta_smart_llm to v3.8**
