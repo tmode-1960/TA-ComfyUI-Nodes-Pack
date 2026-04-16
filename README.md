@@ -27,6 +27,9 @@ This project was inspired by or builds upon the following open-source works:
 ---
 
 ## Changelog
+**v2.0.9 changed ta_smart_llm to v3.8**
+- added a reasoning output to TA Smart LLM  
+ 
 **v2.0.8 changed ta_smart_llm to v3.7**  
 
 v3.3 — Empty LLM response detection: status output now shows a warning instead of silently passing an empty prompt downstream.
