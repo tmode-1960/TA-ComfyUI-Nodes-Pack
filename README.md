@@ -34,6 +34,7 @@ This project was inspired by or builds upon the following open-source works:
 - Triton version: 3.5.1
 - LM Studio: 0.4.11 (Build 1)
 - Ollama: 0.20.2  
+- ComfyUI: 0.19.1
 
 ## Changelog
 **v2.0.9 changed ta_smart_llm to v3.8**
