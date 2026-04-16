@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Smart LLM
 Created     : 2025
-Modified    : 2026-04-04
+Modified    : 2026-04-05
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 3.7
+Version     : 3.8
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -37,6 +37,7 @@ VISION_KEYWORDS = ["llava", "vision", "-vl-", "_vl_", "vl-", "vl_", "moondream",
 # Example: VISION_MANUAL = {"my-vision-model-7b", "another-model-13b"}
 # VISION_MANUAL = set()
 VISION_MANUAL = {"qwen3.5-9b-uncensored-hauhaucs-aggressive"}
+
 
 def is_vision_model(model_id: str) -> bool:
     lower = model_id.lower()
@@ -180,8 +181,8 @@ class TASmartLLM:
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("prompt", "status")
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("prompt", "status", "reasoning")
     FUNCTION = "generate"
     CATEGORY = "TA Tools"
 
@@ -303,10 +304,10 @@ class TASmartLLM:
         image: Optional IMAGE for vision models.
 
         Returns:
-        tuple: (generated_prompt: str, status: str)
+        tuple: (generated_prompt: str, status: str, reasoning: str)
         """
         if not llm_enable:
-            return ("", "DISABLED")
+            return ("", "DISABLED", "")
 
         clean_model = strip_vision_tag(model)
         backend = clean_model.split('/')[0]
@@ -314,7 +315,7 @@ class TASmartLLM:
         port = 1234 if "LMStudio" in backend else 11434
 
         if not self._backend_reachable(backend, port):
-            return ("", f"SKIPPED - {backend} not reachable")
+            return ("", f"SKIPPED - {backend} not reachable", "")
 
         print(f"[TA Smart LLM] Loading model: {clean_model}")
 
@@ -348,26 +349,20 @@ class TASmartLLM:
 
                 message = self._post_with_retry(url, payload, is_lmstudio=True, timeout=request_timeout)
 
-                content         = (message.get('content') or '').strip()
-                reasoning       = (message.get('reasoning_content') or '').strip()
+                content   = (message.get('content') or '').strip()
+                reasoning = (message.get('reasoning_content') or '').strip()
 
                 if thinking_mode:
                     # Thinking ON → return full content including thinking
-                    # Prefer reasoning_content if content is empty (LM Studio 0.4.7+)
                     result = content if content else reasoning
-                    if not result and reasoning:
-                        result = reasoning
                 else:
                     # Thinking OFF → return only the final answer, strip thinking
                     if content:
-                        # content may still contain <think> tags (older LM Studio)
                         if "</think>" in content:
                             result = content.split("</think>", 1)[-1].strip()
                         else:
                             result = content
                     else:
-                        # LM Studio 0.4.7+: answer is missing, only reasoning available
-                        # Try to extract post-</think> from reasoning_content
                         if "</think>" in reasoning:
                             result = reasoning.split("</think>", 1)[-1].strip()
                         else:
@@ -392,20 +387,25 @@ class TASmartLLM:
                 if img_b64:
                     payload["images"] = [img_b64]
                 result = self._post_with_retry(url, payload, is_lmstudio=False, timeout=request_timeout)
+                reasoning = ""
 
                 # Ollama: strip <think> tags if thinking is OFF
                 if not thinking_mode and "</think>" in result:
+                    reasoning = result.split("</think>", 1)[0].replace("<think>", "").strip()
                     result = result.split("</think>", 1)[-1].strip()
 
                 # Unload Ollama model after request
                 if unload_llm_after:
                     self._unload_ollama_llm(model_name)
 
-            return (result.strip(), f"{clean_model} ✅") if result.strip() else ("", f"WARNING: {clean_model} returned empty response")
+            if result.strip():
+                return (result.strip(), f"{clean_model} ✅", reasoning)
+            else:
+                return ("", f"WARNING: {clean_model} returned empty response", reasoning)
 
         except Exception as e:
-            return (f"ERROR: {str(e)}", clean_model)
+            return (f"ERROR: {str(e)}", clean_model, "")
 
 
 NODE_CLASS_MAPPINGS = {"TASmartLLM": TASmartLLM}
-NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v3.7"}
+NODE_DISPLAY_NAME_MAPPINGS = {"TASmartLLM": "TA Smart LLM v3.8"}
