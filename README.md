@@ -32,9 +32,9 @@ This project was inspired by or builds upon the following open-source works:
 - Python: 3.12.10
 - Torch version: 2.9.1+cu130
 - Triton version: 3.5.1
-- LM Studio: 0.4.11 (Build 1)
+- LM Studio: 0.4.12 (Build 1)
 - Ollama: 0.20.2  
-- ComfyUI: 0.19.1
+- ComfyUI: 0.19.3
 
 ## Changelog
 **v2.0.9 changed ta_smart_llm to v3.8**
