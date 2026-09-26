@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA KSampler
 Created     : 2026-03-07
-Modified    : 2026-03-14
+Modified    : 2026-09-26
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.1
+Version     : 2.3
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -14,6 +14,12 @@ Description:
     STRING inputs, making it directly connectable to the TA Sampler Preset node.
     Provides per-step live latent2rgb preview via pbar.update_absolute(),
     identical in behaviour to ComfyUI's built-in KSampler preview.
+Changelog:
+    2.3   2026-09-26  Default downscale ratios (8/1) when the latent source omits the ratio keys (Fix: ResolutionMaster -> Qwen-Image-2.1)
+    2.2   2026-09-26  Pass downscale_ratio_spacial/_temporal to fix_empty_latent_channels (Fix: latent size for Qwen-Image-2.1)
+    2.1   2026-03-14  Error fixes and updates
+    2.0   2026-03-12  New version V2
+    1.0   2026-03-07  Initial version
 ================================================================================
 """
 
@@ -300,9 +306,18 @@ class TAKSampler:
         last_step          = end_at_step   if end_at_step  < 9999 else None
 
         # ── Prepare latent ─────────────────────────────────────────────────
-        latent      = latent_image.copy()
-        latent_data = latent["samples"]
-        latent_data = comfy.sample.fix_empty_latent_channels(model, latent_data)
+        # Latent-Quellen ohne downscale_ratio_*-Key (z. B. ResolutionMaster)
+        # erben die Core-EmptyLatent-Konvention (8, 1); fix_empty_latent_channels
+        # reskaliert nur vollständig leere (All-Zero) Latents.
+        latent         = latent_image.copy()
+        latent_data    = latent["samples"]
+        ratio_spacial  = latent.get("downscale_ratio_spacial", 8)
+        ratio_temporal = latent.get("downscale_ratio_temporal", 1)
+        latent_data    = comfy.sample.fix_empty_latent_channels(
+            model, latent_data,
+            ratio_spacial,
+            ratio_temporal,
+        )
 
         # ── Noise ──────────────────────────────────────────────────────────
         if disable_noise:
@@ -345,6 +360,8 @@ class TAKSampler:
         )
 
         latent["samples"] = samples
+        latent.pop("downscale_ratio_spacial", None)
+        latent.pop("downscale_ratio_temporal", None)
         return (latent,)
 
 
