@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Save Image Optional
 Created     : 2025
-Modified    : 2026-03-12
+Modified    : 2026-10-01
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.1
+Version     : 2.2
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -14,6 +14,13 @@ Description:
     Supports JPEG and WebP output formats with configurable quality, an
     enable/disable toggle, and optional companion .txt files containing the
     positive and negative prompts alongside a timestamp and filename reference.
+    RGBA inputs (e.g. from FLUX / qwen-image 2.1) are converted to RGB; the
+    alpha channel is discarded.
+Changelog:
+    2.2   2026-10-01  Convert RGBA to RGB before save (qwen-image 2.1 JPEG/WebP compatibility)
+    2.1   2026-03-12  Updates after version 2.0
+    2.0   2026-03-12  New version V2
+    1.0               Initial version
 ================================================================================
 """
 
@@ -148,7 +155,7 @@ class TASaveImageOptional(SaveImage):
 
         for i, img in enumerate(images):
             img = ((img.cpu() * 255).clip(0, 255).cpu().numpy()).astype(np.uint8)
-            pil_img = Image.fromarray(img)
+            pil_img = Image.fromarray(img).convert("RGB")
             file_base = f"{filename}_{current_counter:05}_"
             save_path = os.path.join(full_output_folder, f"{file_base}{ext}")
 
@@ -188,5 +195,5 @@ NODE_CLASS_MAPPINGS = {
     "TASaveImageOptional": TASaveImageOptional
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "TASaveImageOptional": "TA Save Image Optional v2.1"
+    "TASaveImageOptional": "TA Save Image Optional v2.2"
 }
