@@ -24,6 +24,9 @@ This project was inspired by or builds upon the following open-source works:
 
 - **[Comfyui-Memory_Cleanup](https://github.com/LAOGOU-666/Comfyui-Memory_Cleanup)** by [LAOGOU-666](https://github.com/LAOGOU-666)
   Inspiration for the VRAM and RAM cleanup logic in the **TACleanupSwitch** node.
+
+  **[Fast Laplacian Sharpen](https://github.com/vrgamegirl19/comfyui-vrgamedevgirl)** by [VRGameDevGirl](https://github.com/vrgamegirl19)
+  Basis and inspiration for the **TAFastLaplacianSharpen** node.
 ---
 ## Tested on the following system (2026-10-01):  
 - CPU: AMD Ryzen 9 5900X
@@ -34,9 +37,12 @@ This project was inspired by or builds upon the following open-source works:
 - Triton version: 3.6.0.post26
 - LM Studio: 0.4.25 (Build 1)
 - Ollama: 0.35.0  
-- ComfyUI: 0.37.0
+- ComfyUI: 0.38.0
 
 ## Changelog
+**v2.2.1 added ta_fastlaplaciansharpen.py v1.0**
+- added RGBA to TA FastLaplacianSharpen for Qwen-Image-2.1 compatibility
+
 **v2.2.0 changed ta_save_image_optional.py to v2.2**
 - RGBA-to-RGB conversion before save — fixes JPEG save crash with qwen-image 2.1
 
