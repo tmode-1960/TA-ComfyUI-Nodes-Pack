@@ -33,6 +33,7 @@ from .ta_directory_captioning import TACaptioning
 from .ta_cleanup_switch import TACleanupSwitch
 from .ta_help_link import TAHelpLink
 from .ta_discord_link import TADiscordLink
+from .ta_fastlaplaciansharpen import TAFastLaplacianSharpen
 
 # Erweiterte Mappings (alt + neu)
 NODE_CLASS_MAPPINGS.update({
@@ -55,6 +56,7 @@ NODE_CLASS_MAPPINGS.update({
     "TACleanupSwitch":        TACleanupSwitch,
     "TAHelpLink":             TAHelpLink,
     "TADiscordLink":          TADiscordLink,
+    "TAFastLaplacianSharpen": TAFastLaplacianSharpen,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -77,6 +79,7 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "TACleanupSwitch":        "🧹 TA Cleanup Switch",
     "TAHelpLink":             "🔗 TA Help Link",
     "TADiscordLink":          "💬 TA Discord Link",
+    "TAFastLaplacianSharpen": "🌀 TA Fast Laplacian Sharpen",
 })
 
 WEB_DIRECTORY = "./web/js"
