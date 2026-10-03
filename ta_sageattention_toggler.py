@@ -2,18 +2,21 @@
 ================================================================================
 Node Name   : TA SageAttention Toggler
 Created     : 2025
-Modified    : 2026-03-27
+Modified    : 2026-10-02
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.1
+Version     : 2.2
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
-
 Description:
-    Patches a ComfyUI MODEL with SageAttention and/or PyTorch FP16 matmul
-    acceleration. Exposes all five SageAttention modes available in
-    ComfyUI-KJNodes: auto, qk_int8_pv_fp16_cuda, qk_int8_pv_fp16_triton,
-    qk_int8_pv_fp8_cuda, and qk_fp8_pv_fp8_cuda.
+    Patches a ComfyUI MODEL with an attention kernel and/or PyTorch FP16
+    matmul acceleration. The attention engine is selected via mutually
+    exclusive (XOR) toggles: SageAttention (all five ComfyUI-KJNodes modes:
+    auto, qk_int8_pv_fp16_cuda, qk_int8_pv_fp16_triton, qk_int8_pv_fp8_cuda,
+    qk_fp8_pv_fp8_cuda) or comfy-kitchen int8_attention. torch_enable is
+    independent of the attention engine choice.
+Changelog:
+    2.2  2026-10-02  kitchen_enable Toggle (comfy-kitchen int8_attention)
 ================================================================================
 """
 
@@ -31,14 +34,19 @@ NODE_DISPLAY_NAME_MAPPINGS = {"TASageAttentionToggler": "🔧 TA SageAttention T
 
 class TASageAttentionToggler:
     """
-    Applies SageAttention and/or PyTorch FP16 matmul patches to a MODEL.
+    Applies an attention kernel and/or a PyTorch FP16 matmul patch to a MODEL.
+
+    SageAttention and comfy-kitchen int8_attention are mutually exclusive:
+    enabling both simultaneously raises a ValueError at sampling time. Exactly
+    one (or neither) may be active. The FP16 matmul patch (torch_enable) is
+    independent and can be combined with either engine.
 
     SageAttention replaces the standard attention function with a quantised
-    CUDA/Triton kernel for faster inference. The FP16 matmul patch enables
-    torch.backends.cuda.matmul.allow_fp16_accumulation for additional
-    throughput on supported hardware (requires PyTorch Nightly 2.7+).
+    CUDA/Triton kernel. comfy-kitchen provides an INT8 attention kernel
+    (ck.int8_attention) backed by the comfy_kitchen dispatch system
+    (hip/cuda/triton/eager backends).
 
-    Both patches are independent and can be enabled or disabled individually.
+    Both attention engines are optional; torch_enable is optional too.
     """
 
     @classmethod
@@ -47,13 +55,17 @@ class TASageAttentionToggler:
         Defines all input widgets shown in the ComfyUI node UI.
 
         Inputs:
-            model:        The ComfyUI MODEL to patch.
-            sage_enable:  Toggle to apply the SageAttention patch.
-            torch_enable: Toggle to apply the FP16 matmul patch.
-            sage_mode:    Selects the SageAttention kernel variant.
-                          'auto' uses the default sageattn() entry point;
-                          the other options select specific quantisation
-                          configurations (CUDA or Triton backends).
+            model:          The ComfyUI MODEL to patch.
+            sage_enable:    Toggle to apply the SageAttention patch.
+                            Mutually exclusive with kitchen_enable.
+            torch_enable:   Toggle to apply the FP16 matmul patch.
+                            Independent of the attention engine choice.
+            sage_mode:      Selects the SageAttention kernel variant.
+                            'auto' uses the default sageattn() entry point;
+                            the other options select specific quantisation
+                            configurations (CUDA or Triton backends).
+            kitchen_enable: Toggle to apply the comfy-kitchen int8_attention
+                            patch. Mutually exclusive with sage_enable.
 
         Returns:
             dict: ComfyUI INPUT_TYPES dictionary with all required inputs.
@@ -70,6 +82,7 @@ class TASageAttentionToggler:
                     "sageattn_qk_int8_pv_fp8_cuda",
                     "sageattn_qk_fp8_pv_fp8_cuda"
                 ], {"default": "auto"}),
+                "kitchen_enable": ("BOOLEAN", {"default": False, "label_on": "✅ Kitchen ON", "label_off": "❌ OFF"}),
             }
         }
 
@@ -77,25 +90,40 @@ class TASageAttentionToggler:
     FUNCTION = "apply_patches"
     CATEGORY = "TA Smart LLM"
 
-    def apply_patches(self, model, sage_enable, torch_enable, sage_mode):
+    def apply_patches(self, model, sage_enable, torch_enable, sage_mode, kitchen_enable):
         """
         Applies the selected patches to the model and returns the patched result.
 
-        Each patch is applied independently based on its toggle. If sage_enable
-        is True, _apply_sage_patch() is called first; if torch_enable is True,
-        _apply_torch_patch() is called afterwards. Both patches modify the model
-        object in-place and also return it for chaining.
+        The attention engine (SageAttention or comfy-kitchen) is mutually
+        exclusive: setting both sage_enable and kitchen_enable to True raises
+        a ValueError. torch_enable is independent of the engine choice.
+
+        If sage_enable is True, _apply_sage_patch() is called.
+        If kitchen_enable is True, _apply_kitchen_patch() is called.
+        If torch_enable is True, _apply_torch_patch() is called.
+        All patches modify the model in-place and return it for chaining.
 
         Args:
-            model:          ComfyUI MODEL object to patch.
-            sage_enable (bool):  Whether to apply the SageAttention patch.
-            torch_enable (bool): Whether to apply the FP16 matmul patch.
-            sage_mode (str):     SageAttention kernel variant to use.
+            model:           ComfyUI MODEL object to patch.
+            sage_enable (bool):   Whether to apply the SageAttention patch.
+            torch_enable (bool):  Whether to apply the FP16 matmul patch.
+            sage_mode (str):      SageAttention kernel variant to use.
+            kitchen_enable (bool): Whether to apply the comfy-kitchen patch.
 
         Returns:
             tuple: Single-element tuple containing the patched MODEL object.
+
+        Raises:
+            ValueError: If both sage_enable and kitchen_enable are True.
         """
-        logger.info(f"🚀 [TA] SageToggler START | Sage:{sage_enable} | Torch:{torch_enable} | Mode:{sage_mode}")
+        logger.info(f"🚀 [TA] SageToggler START | Sage:{sage_enable} | Torch:{torch_enable} | Mode:{sage_mode} | Kitchen:{kitchen_enable}")
+
+        if sage_enable and kitchen_enable:
+            raise ValueError(
+                "SageAttention und Comfort Kitchen sind exklusiv. "
+                "Bitte nur eins aktivieren (sage_enable ODER kitchen_enable)."
+            )
+
         patched_model = model
 
         applied = []
@@ -104,6 +132,10 @@ class TASageAttentionToggler:
             patched_model = self._apply_sage_patch(patched_model, sage_mode)
             applied.append(f"Sage({sage_mode})")
 
+        if kitchen_enable:
+            patched_model = self._apply_kitchen_patch(patched_model)
+            applied.append("Kitchen(int8_attention)")
+
         if torch_enable:
             patched_model = self._apply_torch_patch(patched_model)
             applied.append("Torch FP16")
@@ -111,7 +143,7 @@ class TASageAttentionToggler:
         if applied:
             logger.info(f"✅ [TA] Patches applied: {', '.join(applied)}")
         else:
-            logger.info("⏭️ [TA] No patches applied – both toggles disabled, model passed through.")
+            logger.info("⏭️ [TA] No patches applied – all toggles disabled, model passed through.")
 
         return (patched_model, )
 
@@ -182,6 +214,43 @@ class TASageAttentionToggler:
             logger.error(f"❌ SageAttention import error: {e}")
             logger.info("💡 Install with: pip install sageattention-nightly")
             model.sage_active = False
+
+        return model
+
+    def _apply_kitchen_patch(self, model):
+        """
+        Patches the model with comfy-kitchen int8_attention.
+
+        Imports comfy_kitchen.int8_attention and wraps it in a lambda that
+        matches ComfyUI's attention call signature (q, k, v, is_causal,
+        attn_mask, tensor_layout). The wrapped function is stored as
+        model.kitchen_func and model.kitchen_active is set to True on success.
+
+        If the comfy_kitchen package is not installed, model.kitchen_active
+        is set to False and an installation hint is logged.
+
+        Args:
+            model: ComfyUI MODEL object to patch.
+
+        Returns:
+            MODEL: The model with kitchen_func and kitchen_active set.
+        """
+        logger.info(f"🔥 comfy-kitchen PATCH")
+
+        try:
+            from comfy_kitchen import int8_attention as ck_int8_attn
+
+            kitchen_func = lambda q, k, v, is_causal=False, attn_mask=None, tensor_layout="NHD": \
+                ck_int8_attn(q, k, v, is_causal=is_causal, attn_mask=attn_mask, tensor_layout=tensor_layout)
+
+            logger.info(f"✅ comfy_kitchen int8_attention loaded successfully!")
+            model.kitchen_func = kitchen_func
+            model.kitchen_active = True
+
+        except ImportError as e:
+            logger.error(f"❌ comfy_kitchen import error: {e}")
+            logger.info("💡 Install with: pip install comfy-kitchen")
+            model.kitchen_active = False
 
         return model
 
