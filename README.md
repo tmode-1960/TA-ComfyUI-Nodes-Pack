@@ -28,7 +28,7 @@ This project was inspired by or builds upon the following open-source works:
   **[Fast Laplacian Sharpen](https://github.com/vrgamegirl19/comfyui-vrgamedevgirl)** by [VRGameDevGirl](https://github.com/vrgamegirl19)
   Basis and inspiration for the **TAFastLaplacianSharpen** node.
 ---
-## Tested on the following system (2026-10-01):  
+## Tested on the following system (2026-10-03):  
 - CPU: AMD Ryzen 9 5900X
 - RAM: 64GB
 - GPU: RTX 3090 (24GB VRAM)
@@ -40,6 +40,9 @@ This project was inspired by or builds upon the following open-source works:
 - ComfyUI: 0.38.0
 
 ## Changelog
+**v2.2.2 changed ta_sageattention_toggler.py to v2.2**
+- added kitchen_enable Toggle (comfy-kitchen int8_attention)
+
 **v2.2.1 added ta_fastlaplaciansharpen.py v1.0**
 - added RGBA to TA FastLaplacianSharpen for Qwen-Image-2.1 compatibility
 
