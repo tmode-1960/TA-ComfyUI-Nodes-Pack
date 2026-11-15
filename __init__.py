@@ -2,8 +2,8 @@
 TA ComfyUI Nodes Pack
 © Thomas Möhrling (thomo.ART)
 Erstelldatum: 2026-03-02
-Änderungsdatum: 2026-03-13
-Version: v4.0 - TADiscordLink hinzugefügt
+Änderungsdatum: 2026-11-15
+Version: v4.1 - TAFilmGrain hinzugefügt
 """
 
 print("\n" + "="*60)
@@ -34,6 +34,7 @@ from .ta_cleanup_switch import TACleanupSwitch
 from .ta_help_link import TAHelpLink
 from .ta_discord_link import TADiscordLink
 from .ta_fastlaplaciansharpen import TAFastLaplacianSharpen
+from .ta_film_grain import TAFilmGrain
 
 # Erweiterte Mappings (alt + neu)
 NODE_CLASS_MAPPINGS.update({
@@ -57,6 +58,7 @@ NODE_CLASS_MAPPINGS.update({
     "TAHelpLink":             TAHelpLink,
     "TADiscordLink":          TADiscordLink,
     "TAFastLaplacianSharpen": TAFastLaplacianSharpen,
+    "TAFilmGrain":            TAFilmGrain,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -80,6 +82,7 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "TAHelpLink":             "🔗 TA Help Link",
     "TADiscordLink":          "💬 TA Discord Link",
     "TAFastLaplacianSharpen": "🌀 TA Fast Laplacian Sharpen",
+    "TAFilmGrain":            "🎞️ TA Film Grain",
 })
 
 WEB_DIRECTORY = "./web/js"

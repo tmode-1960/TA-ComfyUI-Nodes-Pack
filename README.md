@@ -40,6 +40,10 @@ This project was inspired by or builds upon the following open-source works:
 - ComfyUI: 0.38.0
 
 ## Changelog
+**v2.2.3 added ta_film_grain.py v1.0**
+- added self-contained `TAFilmGrain` node (`🎞️ TA Film Grain`, RGB/RGBA, 1:1 parameter-compatible with `ProPostFilmGrain`)
+- updated example workflow to `TA-FLEXMOD-LLM v2.89.json` using `TAFilmGrain`
+
 **v2.2.2 changed ta_sageattention_toggler.py to v2.2**
 - added kitchen_enable Toggle (comfy-kitchen int8_attention)
 
@@ -125,6 +129,9 @@ Extends ComfyUI's built-in SaveImage with optional companion `.txt` files contai
 
 ### 🎬 TA SeedVR2 Gate
 Enable/disable gate for the SeedVR2 upscaler pipeline using lazy evaluation. When disabled, all upstream nodes (including the ~14 GB model loaders) are skipped entirely.
+
+### 🎞️ TA Film Grain
+Self-contained film grain node for RGB and RGBA `IMAGE` tensors (alpha preserved untouched) with shadow/highlight response, gamma shaping, grayscale option, and post-grain sharpening. 1:1 parameter-compatible with `ProPostFilmGrain` without external `filmgrainer` dependencies.
 
 ### 💬 TA Discord Link
 Displays a clickable Discord invite link directly inside the ComfyUI graph. URL and button label are configurable via a browser-based editor.
