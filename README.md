@@ -40,6 +40,9 @@ This project was inspired by or builds upon the following open-source works:
 - ComfyUI: 0.38.0
 
 ## Changelog
+**v2.2.4 cleaned example workflow (`TA-FLEXMOD-LLM v2.90.json`)**
+- removed leftover example prompt texts from `TA-FLEXMOD-LLM v2.90.json`
+
 **v2.2.3 added ta_film_grain.py v1.0**
 - added self-contained `TAFilmGrain` node (`🎞️ TA Film Grain`, RGB/RGBA, 1:1 parameter-compatible with `ProPostFilmGrain`)
 - updated example workflow to `TA-FLEXMOD-LLM v2.90.json` using `TAFilmGrain`
