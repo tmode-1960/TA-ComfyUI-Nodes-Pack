@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Directory Captioning
 Created     : 2025
-Modified    : 2026-03-11
+Modified    : 2026-11-17
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 2.0
+Version     : 2.1
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -13,6 +13,9 @@ Description:
     Iterates through a directory, sends images to LM Studio or Ollama Vision
     Models and saves the generated captions as .txt files alongside each image.
     Uses TASmartLLM model detection logic (LMStudio + Ollama, Vision tagging).
+
+Changelog:
+    2.1  2026-11-17  Filter TASmartLLM model list to local LMStudio/Ollama backends
 ================================================================================
 """
 
@@ -137,7 +140,7 @@ class TACaptioning:
         Returns:
             dict: ComfyUI INPUT_TYPES dictionary with all required inputs.
         """
-        models = TASmartLLM.get_models()
+        models = [m for m in TASmartLLM.get_models() if m.startswith(("LMStudio/", "Ollama/"))] or ["No Backend"]
 
         vision_models = [m for m in models if "[Vision]" in m]
         default_model = vision_models[0] if vision_models else (models[0] if models else "No Backend")
