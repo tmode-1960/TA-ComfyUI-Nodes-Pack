@@ -2,9 +2,9 @@
 ================================================================================
 Node Name   : TA Smart LLM
 Created     : 2025
-Modified    : 2026-11-17
+Modified    : 2026-11-24
 Copyright   : © 2026, Thomas Möhrling (thomo.ART)
-Version     : 3.9
+Version     : 4.0
 --------------------------------------------------------------------------------
 Part of ComfyUI-TA-Nodes-Pack
 License     : Apache 2.0
@@ -18,6 +18,7 @@ Description:
     and model caching. Returns generated prompt text and execution status.
 
 Changelog:
+    4.0  2026-11-24  Add huihui-qwen3.8-27b-abliterated to VISION_MANUAL and pass thinking_mode to LM Studio/Ollama
     3.9  2026-11-17  Add optional cloud LLM providers (Gemini, OpenAI, OpenRouter, Groq) via env vars
 ================================================================================
 """
@@ -40,7 +41,10 @@ VISION_KEYWORDS = ["llava", "vision", "-vl-", "_vl_", "vl-", "vl_", "moondream",
 # Manual additions (exact model names without backend prefix, lowercase)
 # Example: VISION_MANUAL = {"my-vision-model-7b", "another-model-13b"}
 # VISION_MANUAL = set()
-VISION_MANUAL = {"qwen3.5-9b-uncensored-hauhaucs-aggressive"}
+VISION_MANUAL = {
+    "qwen3.5-9b-uncensored-hauhaucs-aggressive",
+    "huihui-qwen3.8-27b-abliterated",
+}
 
 # Cloud model prefixes that support multimodal image input
 CLOUD_VISION_PREFIXES = ("gemini-", "gpt-4o", "gpt-4.1", "gpt-5", "claude-3", "claude-4", "pixtral")
@@ -503,9 +507,13 @@ class TASmartLLM:
 
             elif "LMStudio" in backend:
                 url = f"http://127.0.0.1:{port}/v1/chat/completions"
+                extra_params = (
+                    {"chat_template_kwargs": {"enable_thinking": False}}
+                    if not thinking_mode else None
+                )
                 payload = self._build_openai_payload(
                     model_name, system_prompt, full_prompt, img_b64,
-                    temperature, max_tokens
+                    temperature, max_tokens, extra_params=extra_params
                 )
                 message = self._post_with_retry(
                     url, payload, is_openai=True, timeout=request_timeout
@@ -522,6 +530,7 @@ class TASmartLLM:
                     "model": model_name,
                     "prompt": f"{system_prompt}\n\n{full_prompt}".strip(),
                     "stream": False,
+                    "think": bool(thinking_mode),
                     "options": {
                         "temperature": temperature,
                         "num_predict": max_tokens
